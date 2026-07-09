@@ -30,4 +30,4 @@ The hardest part wasn't the UI — it was resisting the urge to make every scena
 
 ---
 
-Built as part of the **[ABTalks Community](https://www.linkedin.com/company/abtalks/) 60 Days Claude AI Challenge**.
+Built as part of the **[ABTalksOnAI Community](https://www.linkedin.com/company/abtalks-on-ai) 60 Days Claude AI Challenge**.

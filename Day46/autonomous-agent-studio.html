@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autonomous Agent Studio — Code Generator/Reviewer</title>
+<style>
+  :root{
+    --bg:#0a0d12;
+    --bg-panel:#10141b;
+    --bg-panel-2:#141a23;
+    --bg-inset:#0d1117;
+    --border:#212836;
+    --border-soft:#1a212c;
+    --text:#e7ebf1;
+    --text-dim:#8b96a8;
+    --text-faint:#5a6579;
+    --accent:#22d3ac;
+    --accent-dim:#1a9a7d;
+    --accent-glow:rgba(34,211,172,0.18);
+    --amber:#f5b95c;
+    --amber-glow:rgba(245,185,92,0.15);
+    --red:#ff6b6b;
+    --red-glow:rgba(255,107,107,0.15);
+    --violet:#a78bfa;
+    --mono: "SF Mono","Consolas","Menlo","Cascadia Code",monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(34,211,172,0.07), transparent),
+      radial-gradient(ellipse 700px 400px at 100% 0%, rgba(167,139,250,0.05), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    line-height:1.5;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+  ::selection{background:var(--accent-glow);}
+  a{color:var(--accent);}
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 24px 80px;}
+
+  /* ---------- Header ---------- */
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{
+    width:42px;height:42px;border-radius:9px;flex:none;
+    background:linear-gradient(135deg, var(--accent), #0e7a63);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-weight:700;color:#04120e;font-size:18px;
+    box-shadow:0 0 0 1px rgba(34,211,172,.3), 0 8px 24px -8px var(--accent-glow);
+  }
+  .brand h1{font-size:19px;margin:0;letter-spacing:-0.01em;font-weight:650;}
+  .brand .sub{font-size:12.5px;color:var(--text-dim);font-family:var(--mono);margin-top:2px;}
+  .top-actions{display:flex;gap:10px;align-items:center;}
+  .pill{
+    font-family:var(--mono);font-size:11.5px;padding:5px 10px;border-radius:99px;
+    border:1px solid var(--border);color:var(--text-dim);background:var(--bg-panel);
+    display:flex;align-items:center;gap:6px;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--text-faint);}
+  .dot.live{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+  /* ---------- Card base ---------- */
+  .card{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .card h2{font-size:14px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);font-weight:650;}
+  .card h2 .n{color:var(--accent);font-family:var(--mono);margin-right:6px;}
+
+  /* ---------- Interview / Setup ---------- */
+  #setupScreen{max-width:760px;margin:40px auto;}
+  #setupScreen .card{padding:32px;}
+  #setupScreen h2.title{font-size:22px;color:var(--text);text-transform:none;letter-spacing:-0.01em;margin-bottom:6px;}
+  #setupScreen p.lead{color:var(--text-dim);font-size:14px;margin:0 0 24px;}
+  label.field-label{display:block;font-size:12.5px;color:var(--text-dim);margin:18px 0 6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;}
+  textarea, input[type=text], input[type=number]{
+    width:100%;background:var(--bg-inset);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:11px 13px;font-family:var(--mono);font-size:13.5px;resize:vertical;
+    transition:border-color .15s;
+  }
+  textarea:focus, input:focus{outline:none;border-color:var(--accent-dim);box-shadow:0 0 0 3px var(--accent-glow);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .hint{font-size:11.5px;color:var(--text-faint);margin-top:5px;}
+  .btn{
+    font-family:var(--sans);font-weight:600;font-size:14px;padding:12px 22px;border-radius:8px;
+    border:1px solid var(--accent-dim);background:var(--accent);color:#052620;cursor:pointer;
+    transition:transform .1s, box-shadow .15s;
+  }
+  .btn:hover{box-shadow:0 6px 20px -6px var(--accent-glow);transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+  .btn.secondary{background:transparent;color:var(--text);border-color:var(--border);}
+  .btn.secondary:hover{border-color:var(--text-faint);box-shadow:none;}
+  .btn-row{display:flex;gap:10px;margin-top:26px;align-items:center;}
+
+  /* ---------- Dashboard layout ---------- */
+  #dashboard{display:none;}
+  .grid-top{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-bottom:18px;}
+  .agent-row{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:18px;}
+  .agent-chip{
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:9px;
+    padding:10px 8px;text-align:center;transition:all .25s;position:relative;overflow:hidden;
+  }
+  .agent-chip .ic{font-size:16px;margin-bottom:4px;}
+  .agent-chip .nm{font-size:10.5px;font-weight:650;color:var(--text-dim);letter-spacing:.02em;font-family:var(--mono);}
+  .agent-chip.active{
+    border-color:var(--accent-dim);background:linear-gradient(180deg, var(--accent-glow), transparent);
+    box-shadow:0 0 0 1px var(--accent-dim), 0 8px 20px -10px var(--accent-glow);
+  }
+  .agent-chip.active .nm{color:var(--accent);}
+  .agent-chip.done .nm{color:var(--text);}
+  .agent-chip.done{border-color:var(--border-soft);}
+  .agent-chip .bar{position:absolute;bottom:0;left:0;height:2px;background:var(--accent);width:0%;transition:width .3s;}
+  .agent-chip.active .bar{animation:scan 1.2s ease-in-out infinite;}
+  @keyframes scan{0%{width:0%;}50%{width:100%;}100%{width:0%;}}
+
+  .grid-main{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .col{display:flex;flex-direction:column;gap:18px;}
+
+  /* Round indicator */
+  .round-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 20px;margin-bottom:18px;flex-wrap:wrap;
+  }
+  .round-bar .rlabel{font-family:var(--mono);font-size:15px;font-weight:650;}
+  .round-bar .rstatus{font-size:12.5px;color:var(--text-dim);margin-top:3px;}
+  .round-bar .score-badge{
+    font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);
+    display:flex;align-items:baseline;gap:4px;
+  }
+  .score-badge .of{font-size:12px;color:var(--text-faint);font-weight:400;}
+  .stop-banner{
+    margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;font-family:var(--mono);
+    background:var(--amber-glow);border:1px solid var(--amber);color:var(--amber);display:none;
+  }
+  .stop-banner.show{display:block;}
+
+  /* code block */
+  .code-box{
+    background:var(--bg-inset);border:1px solid var(--border-soft);border-radius:8px;
+    padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.6;
+    white-space:pre-wrap;word-break:break-word;max-height:420px;overflow-y:auto;color:#c9e8dc;
+  }
+  .code-box::-webkit-scrollbar{width:8px;}
+  .code-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+  /* log console */
+  .log-box{
+    background:var(--bg-inset);border:1px solid var(--border-soft);border-radius:8px;
+    padding:12px 14px;font-family:var(--mono);font-size:12px;max-height:340px;overflow-y:auto;
+  }
+  .log-line{padding:3px 0;color:var(--text-dim);border-bottom:1px dashed var(--border-soft);display:flex;gap:8px;}
+  .log-line:last-child{border-bottom:none;}
+  .log-line .ts{color:var(--text-faint);flex:none;}
+  .log-line.tag-plan{color:#8ec8ff;}
+  .log-line.tag-exec{color:var(--accent);}
+  .log-line.tag-eval{color:var(--amber);}
+  .log-line.tag-crit{color:var(--red);}
+  .log-line.tag-improve{color:var(--violet);}
+  .log-line.tag-mem{color:#8ec8ff;}
+  .log-line.tag-final{color:#fff;font-weight:600;}
+  .log-line.tag-sys{color:var(--text-faint);}
+
+  /* history timeline */
+  .history-item{
+    border:1px solid var(--border-soft);border-radius:8px;padding:12px 14px;margin-bottom:10px;
+    background:var(--bg-panel-2);
+  }
+  .history-item .hi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .history-item .hi-round{font-family:var(--mono);font-weight:650;font-size:13px;}
+  .history-item .hi-score{font-family:var(--mono);font-size:14px;font-weight:700;}
+  .history-item .hi-delta{font-family:var(--mono);font-size:11.5px;margin-left:6px;}
+  .delta-up{color:var(--accent);}
+  .delta-flat{color:var(--text-faint);}
+  .history-item .hi-crit{font-size:12.5px;color:var(--text-dim);margin-top:4px;}
+  .badge-small{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:99px;background:var(--bg-inset);border:1px solid var(--border);color:var(--text-dim);}
+
+  details.agent-explainer{border:1px solid var(--border-soft);border-radius:8px;padding:10px 14px;margin-bottom:8px;background:var(--bg-panel-2);}
+  details.agent-explainer summary{cursor:pointer;font-family:var(--mono);font-size:12.5px;font-weight:650;color:var(--text);}
+  details.agent-explainer p{font-size:12.5px;color:var(--text-dim);margin:8px 0 2px;}
+
+  /* SVG loop diagram */
+  #loopSvgWrap{display:flex;justify-content:center;padding:6px 0 2px;}
+
+  /* Final summary */
+  #finalSection{display:none;margin-top:18px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;}
+  .stat{background:var(--bg-inset);border:1px solid var(--border-soft);border-radius:8px;padding:14px;text-align:center;}
+  .stat .v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);}
+  .stat .l{font-size:11px;color:var(--text-dim);margin-top:4px;text-transform:uppercase;letter-spacing:.04em;}
+
+  .footer-cta{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap;}
+  ul.clean{margin:8px 0;padding-left:18px;}
+  ul.clean li{font-size:13px;color:var(--text-dim);margin-bottom:6px;}
+
+  .error-box{background:var(--red-glow);border:1px solid var(--red);color:var(--red);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12.5px;margin-top:10px;}
+
+  @media (max-width:960px){
+    .grid-top, .grid-main, .row2{grid-template-columns:1fr;}
+    .agent-row{grid-template-columns:repeat(4,1fr);}
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">AS</div>
+      <div>
+        <h1>Autonomous Agent Studio</h1>
+        <div class="sub">code generator/reviewer &middot; live multi-agent orchestration</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="pill"><span class="dot" id="liveDot"></span><span id="liveLabel">idle</span></div>
+      <div class="pill">model: claude-sonnet-4-6</div>
+    </div>
+  </header>
+
+  <!-- ================= SETUP / INTERVIEW SUMMARY SCREEN ================= -->
+  <div id="setupScreen">
+    <div class="card">
+      <h2 class="title">Set up your run</h2>
+      <p class="lead">Workflow: <strong>generate a function/script from a spec, then iteratively improve it</strong> &middot; success criteria: <strong>correctness / bug-free-ness</strong> &middot; stop on <strong>score threshold OR plateau</strong> &middot; agents: auto-designed.</p>
+
+      <label class="field-label">Spec — describe the function/script to build</label>
+      <textarea id="specInput" rows="5" placeholder="e.g. Write a Python function `parse_duration(s)` that converts strings like '1h30m', '45s', '2d' into total seconds. Handle invalid input, mixed units, negative durations, and whitespace.">Write a Python function `flatten_json(obj, sep='.')` that flattens an arbitrarily nested dict/list structure into a single-level dict with compound keys (e.g. {"a":{"b":1}} -> {"a.b":1}). It must handle lists (indexed keys), empty dicts/lists, None values, non-string keys, and deeply nested structures without hitting Python's default recursion limit on reasonable inputs (~500 levels).</textarea>
+      <div class="hint">Be specific about edge cases — the Evaluator will grade correctness against exactly what you write here.</div>
+
+      <div class="row2">
+        <div>
+          <label class="field-label">Target correctness score (threshold)</label>
+          <input type="number" id="thresholdInput" value="92" min="50" max="100">
+          <div class="hint">Loop stops once Evaluator's score ≥ this value.</div>
+        </div>
+        <div>
+          <label class="field-label">Plateau sensitivity (min delta)</label>
+          <input type="number" id="deltaInput" value="3" min="1" max="10">
+          <div class="hint">Stop if score gain &lt; this for 2 rounds straight.</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="startBtn">Launch pipeline →</button>
+        <span class="hint" id="setupError" style="color:var(--red);"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DASHBOARD ================= -->
+  <div id="dashboard">
+
+    <div class="round-bar">
+      <div>
+        <div class="rlabel" id="roundLabel">Round 0 — initializing…</div>
+        <div class="rstatus" id="roundStatus">Waiting for Planner</div>
+      </div>
+      <div class="score-badge"><span id="scoreNow">—</span><span class="of">/ 100 correctness</span></div>
+    </div>
+    <div class="stop-banner" id="stopBanner"></div>
+
+    <!-- workflow diagram -->
+    <div class="card" style="margin-bottom:18px;">
+      <h2><span class="n">◆</span>Live workflow — the loop</h2>
+      <div id="loopSvgWrap"></div>
+    </div>
+
+    <!-- agent chips -->
+    <div class="agent-row" id="agentRow"></div>
+
+    <div class="grid-main">
+      <div class="col">
+        <div class="card">
+          <h2><span class="n">01</span>Current draft</h2>
+          <div class="code-box" id="codeBox">// awaiting Executor…</div>
+        </div>
+        <div class="card">
+          <h2><span class="n">02</span>Iteration history</h2>
+          <div id="historyBox"><div class="hint">No rounds completed yet.</div></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card">
+          <h2><span class="n">03</span>Activity log</h2>
+          <div class="log-box" id="logBox"></div>
+        </div>
+        <div class="card">
+          <h2><span class="n">04</span>Memory panel</h2>
+          <div class="log-box" id="memBox" style="max-height:200px;"><div class="hint">Memory Manager hasn't run yet.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- agent explainer -->
+    <div class="card" style="margin-top:18px;">
+      <h2><span class="n">◆</span>How the stop-check governs the loop</h2>
+      <p style="font-size:13px;color:var(--text-dim);margin-top:0;">Each round: <strong>Evaluator</strong> scores the current draft against the spec's correctness bar → <strong>Critic</strong> turns that score into concrete, fixable findings → <strong>Improver</strong> rewrites the draft using both → <strong>Memory Manager</strong> compresses the round into a running note fed forward. After Evaluator reports, three checks run in order every round: <strong>(1) plateau</strong> — gain &lt; delta for 2 straight rounds, <strong>(2) threshold</strong> — score ≥ target, <strong>(3) hard cap</strong> — safety fallback only. The first one to fire ends the loop and branches execution to the Final Reviewer.</p>
+      <div id="agentExplainers"></div>
+    </div>
+
+    <!-- final summary -->
+    <div id="finalSection">
+      <div class="card">
+        <h2><span class="n">★</span>Final output</h2>
+        <div class="code-box" id="finalCodeBox"></div>
+      </div>
+      <div class="card" style="margin-top:18px;">
+        <h2><span class="n">★</span>Final Reviewer verdict</h2>
+        <div class="log-box" id="finalReviewBox" style="max-height:260px;"></div>
+      </div>
+      <div class="card" style="margin-top:18px;">
+        <h2><span class="n">★</span>Execution stats &amp; agent performance</h2>
+        <div class="stat-grid" id="statGrid"></div>
+      </div>
+      <div class="card" style="margin-top:18px;">
+        <h2><span class="n">★</span>Architecture overview</h2>
+        <ul class="clean">
+          <li><strong>Planner</strong> — reads the raw spec once and produces a structured build plan (approach, data structures, edge cases) that anchors every later round.</li>
+          <li><strong>Executor</strong> — turns the plan into the first working draft.</li>
+          <li><strong>Evaluator</strong> — re-scores the draft against the spec every round; the only agent whose number literally drives the stop-check.</li>
+          <li><strong>Critic</strong> — converts the score into a specific, prioritized punch-list the Improver can act on.</li>
+          <li><strong>Improver</strong> — the only agent allowed to touch the code after round 0; always conditioned on the prior evaluation + critique.</li>
+          <li><strong>Memory Manager</strong> — compresses history into a short running note so later rounds don't re-litigate settled ground.</li>
+          <li><strong>Final Reviewer</strong> — runs once, after the loop exits, and independently signs off (or flags concerns) on the surviving draft.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:18px;">
+        <h2><span class="n">★</span>Extension ideas &amp; further prompts</h2>
+        <ul class="clean">
+          <li>Add a <strong>Safety Monitor</strong> agent that screens every Improver output for unsafe patterns (eval, shell injection, unbounded recursion) before it's allowed to become the new draft.</li>
+          <li>Give the Executor a real sandboxed interpreter tool call so scores come from actual test execution, not just model judgment.</li>
+          <li>Let the Critic branch: "blocking" findings must be fixed next round; "polish" findings are deferred until threshold is close.</li>
+          <li>Persist Memory Manager notes across <em>separate specs</em> so the pipeline builds a house style over many runs.</li>
+          <li>Try prompting: <em>"Design a 3-agent pipeline for legal-contract redlining with a human-approval stop condition instead of a score threshold."</em></li>
+          <li>Try prompting: <em>"Extend this studio so Planner can request clarifying questions back to the user before Executor runs."</em></li>
+        </ul>
+      </div>
+      <div class="footer-cta">
+        <button class="btn secondary" id="restartBtn">Run another spec</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CONFIG / AGENT DEFINITIONS
+  ============================================================ */
+  const MODEL = "claude-sonnet-4-6";
+  const HARD_CAP = 8;
+  const MAX_RETRIES = 3;
+
+  const AGENTS = [
+    {key:"planner", label:"Planner", icon:"🧭"},
+    {key:"executor", label:"Executor", icon:"⚙️"},
+    {key:"evaluator", label:"Evaluator", icon:"📊"},
+    {key:"critic", label:"Critic", icon:"🔍"},
+    {key:"improver", label:"Improver", icon:"🛠"},
+    {key:"memory", label:"Memory Mgr", icon:"🧠"},
+    {key:"final", label:"Final Rev.", icon:"✅"},
+  ];
+
+  const SYS = {
+    planner: `You are the Planner agent in an autonomous code-generation pipeline. You receive a raw software spec from a user. Your job is to produce a tight, concrete build plan — NOT code. Cover: (1) the intended approach/algorithm, (2) key data structures, (3) an explicit list of edge cases the implementation must handle, (4) any ambiguities you're resolving with a stated assumption. Be concise and concrete. Output plain text, no code blocks.`,
+
+    executor: `You are the Executor agent in an autonomous code-generation pipeline. You receive a spec and a Planner's build plan. Produce a single, complete, working code implementation that follows the plan. Output ONLY the code in a single fenced code block (\`\`\`language ... \`\`\`) with nothing before or after it — no explanation, no preamble.`,
+
+    evaluator: `You are the Evaluator agent in an autonomous code-generation pipeline. Your ONLY success criterion is correctness / bug-free-ness against the given spec — ignore style, performance, and formatting unless they cause incorrect behavior. You receive the original spec and the current code draft (plus optional prior context). Mentally trace through the spec's requirements and edge cases against the code. Write a short evaluation covering: what works correctly, what's broken or unhandled, and any edge case failures you can identify. You MUST end your entire response with a single line, exactly formatted as:
+FINAL_SCORE: <integer 0-100>
+where 100 means fully correct and bug-free against the spec, and lower scores reflect concrete correctness defects you identified. Do not put anything after that line.`,
+
+    critic: `You are the Critic agent in an autonomous code-generation pipeline. You receive the spec, the current code draft, and the Evaluator's report. Turn the evaluation into a specific, prioritized, actionable punch-list of fixes — each item should name the exact defect and what correct behavior should be instead. Order by severity (blocking bugs first). Do not rewrite the code yourself. Be concrete and terse — a numbered list is ideal.`,
+
+    improver: `You are the Improver agent in an autonomous code-generation pipeline. You receive the spec, the current code draft, the Evaluator's report, and the Critic's punch-list. Rewrite the code to fix every item on the punch-list while preserving what already works. Do not introduce new unrequested features. Output ONLY the corrected code in a single fenced code block, nothing before or after it.`,
+
+    memory: `You are the Memory Manager agent in an autonomous code-generation pipeline. You receive the round history so far (scores, critiques, deltas). Write a short running memory note (3-5 sentences max) capturing: which issues have been permanently fixed (so later agents don't re-flag them), which issues are recurring or still open, and the overall trend. Be terse. Plain text only.`,
+
+    final: `You are the Final Reviewer agent — the last checkpoint in an autonomous code-generation pipeline, running once after the improvement loop has exited. You receive the spec, the final code draft, the final Evaluator score, and the reason the loop stopped. Independently assess whether the code is production-ready against the spec's correctness bar, note any residual risk (including a brief informal safety scan for obviously unsafe patterns), and give a clear final verdict (ship / ship-with-caveats / needs-another-pass). Be concise but specific.`
+  };
+
+  /* ============================================================
+     STATE
+  ============================================================ */
+  let state = {
+    spec:"", threshold:92, delta:3,
+    plan:"", code:"", round:0,
+    history:[], // {round, score, evalText, critique, delta, improveNote}
+    memoryNote:"",
+    stopReason:null,
+    finalReviewText:"",
+    apiCalls:0, retries:0,
+    startTime:0,
+  };
+
+  /* ============================================================
+     DOM HELPERS
+  ============================================================ */
+  const $ = id => document.getElementById(id);
+
+  function log(tag, msg){
+    const box = $("logBox");
+    const line = document.createElement("div");
+    line.className = "log-line tag-"+tag;
+    const t = new Date().toLocaleTimeString();
+    line.innerHTML = `<span class="ts">${t}</span><span>${escapeHtml(msg)}</span>`;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function setLive(on, label){
+    $("liveDot").className = "dot" + (on ? " live" : "");
+    $("liveLabel").textContent = label || (on ? "running" : "idle");
+  }
+
+  function setActiveAgent(key){
+    document.querySelectorAll(".agent-chip").forEach(el=>{
+      el.classList.remove("active");
+      if(el.dataset.key === key) el.classList.add("active");
+      else if(key===null) {}
+    });
+  }
+  function markAgentDone(key){
+    const el = document.querySelector(`.agent-chip[data-key="${key}"]`);
+    if(el){ el.classList.remove("active"); el.classList.add("done"); }
+  }
+  function resetAgentChips(){
+    document.querySelectorAll(".agent-chip").forEach(el=>{
+      el.classList.remove("active","done");
+    });
+  }
+
+  function buildAgentRow(){
+    const row = $("agentRow");
+    row.innerHTML = "";
+    AGENTS.forEach(a=>{
+      const div = document.createElement("div");
+      div.className = "agent-chip";
+      div.dataset.key = a.key;
+      div.innerHTML = `<div class="ic">${a.icon}</div><div class="nm">${a.label}</div><div class="bar"></div>`;
+      row.appendChild(div);
+    });
+  }
+
+  function buildExplainers(){
+    const wrap = $("agentExplainers");
+    wrap.innerHTML = "";
+    const desc = {
+      planner:"Runs once at round 0. Reads the raw spec, produces the build plan every later agent is anchored to.",
+      executor:"Runs once at round 0. Turns the plan into the first working draft.",
+      evaluator:"Runs every round. Its FINAL_SCORE line is the only number that drives the stop-check.",
+      critic:"Runs every round. Converts the Evaluator's prose into a fixable, prioritized punch-list.",
+      improver:"Runs every round after round 0. The only agent allowed to change the code, always fed the prior evaluation + critique.",
+      memory:"Runs every round. Compresses history into a short note fed forward so agents don't re-litigate fixed issues.",
+      final:"Runs once, after the loop exits, independent of the score — can still flag concerns even if the threshold was hit."
+    };
+    AGENTS.forEach(a=>{
+      const d = document.createElement("details");
+      d.className = "agent-explainer";
+      d.innerHTML = `<summary>${a.icon} ${a.label}</summary><p>${desc[a.key]}</p>`;
+      wrap.appendChild(d);
+    });
+  }
+
+  /* ============================================================
+     SVG LOOP DIAGRAM
+  ============================================================ */
+  function renderLoopSvg(activeKey, stopped){
+    const w = 720, h = 230;
+    const nodes = {
+      evaluator: {x:150, y:70, label:"Evaluator"},
+      critic:    {x:390, y:40, label:"Critic"},
+      improver:  {x:610, y:70, label:"Improver"},
+      final:     {x:610, y:190, label:"Final Reviewer"},
+    };
+    const stroke = "#2a3444";
+    const accent = "#22d3ac";
+    function node(key, filled){
+      const n = nodes[key];
+      const isActive = key===activeKey;
+      const col = isActive ? accent : (filled ? "#5a6579" : stroke);
+      return `<g>
+        <circle cx="${n.x}" cy="${n.y}" r="34" fill="${isActive?'rgba(34,211,172,0.15)':'#10141b'}" stroke="${col}" stroke-width="${isActive?2.5:1.5}"/>
+        <text x="${n.x}" y="${n.y+5}" text-anchor="middle" font-family="monospace" font-size="11" fill="${isActive?accent:'#c7cfdb'}">${n.label}</text>
+      </g>`;
+    }
+    const arrowHead = id => `<marker id="${id}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="${stroke}"/></marker>`;
+
+    const svg = `
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:760px;height:auto;">
+      <defs>
+        ${arrowHead("arrowMain")}
+      </defs>
+      <!-- main cycle: evaluator -> critic -> improver -> back to evaluator -->
+      <path d="M 182,55 C 260,20 320,20 388,15" fill="none" stroke="${stroke}" stroke-width="1.5" marker-end="url(#arrowMain)"/>
+      <path d="M 424,50 C 480,60 560,60 590,60" fill="none" stroke="${stroke}" stroke-width="1.5" marker-end="url(#arrowMain)"/>
+      <path d="M 605,104 C 560,175 260,175 155,104" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowMain)"/>
+      <text x="380" y="150" text-anchor="middle" font-family="monospace" font-size="10" fill="#5a6579">return: next round</text>
+      <!-- branch to final reviewer -->
+      <path d="M 610,104 L 610,156" fill="none" stroke="${stopped?accent:stroke}" stroke-width="${stopped?2.5:1.5}" stroke-dasharray="${stopped?'0':'3 3'}" marker-end="url(#arrowMain)"/>
+      <text x="650" y="135" font-family="monospace" font-size="9.5" fill="${stopped?accent:'#5a6579'}">stop fires</text>
+      ${node("evaluator")}
+      ${node("critic")}
+      ${node("improver")}
+      ${node("final")}
+    </svg>`;
+    $("loopSvgWrap").innerHTML = svg.replace(/Evaluator|Critic|Improver|Final Reviewer/g, (m)=>m); // labels already set via key mapping below
+
+    // fix active highlighting using activeKey directly (rebuild with proper active flag)
+  }
+
+  // proper version with active param respected
+  function renderLoop(activeKey, stopped){
+    const nodes = {
+      evaluator: {x:150, y:66, label:"Evaluator", key:"evaluator"},
+      critic:    {x:390, y:36, label:"Critic", key:"critic"},
+      improver:  {x:610, y:66, label:"Improver", key:"improver"},
+      final:     {x:610, y:186, label:"Final Reviewer", key:"final"},
+    };
+    const strokeCol = "#2a3444";
+    const accent = "#22d3ac";
+    let g = "";
+    Object.values(nodes).forEach(n=>{
+      const isActive = n.key===activeKey;
+      const col = isActive ? accent : strokeCol;
+      g += `<circle cx="${n.x}" cy="${n.y}" r="34" fill="${isActive?'rgba(34,211,172,0.15)':'#10141b'}" stroke="${col}" stroke-width="${isActive?2.5:1.5}"/>
+        <text x="${n.x}" y="${n.y+5}" text-anchor="middle" font-family="monospace" font-size="11" fill="${isActive?accent:'#c7cfdb'}">${n.label}</text>`;
+    });
+    const svg = `
+    <svg viewBox="0 0 720 230" width="100%" style="max-width:760px;height:auto;">
+      <defs>
+        <marker id="am" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="${strokeCol}"/></marker>
+      </defs>
+      <path d="M 182,55 C 260,18 320,18 388,13" fill="none" stroke="${strokeCol}" stroke-width="1.5" marker-end="url(#am)"/>
+      <path d="M 424,48 C 480,58 560,58 590,62" fill="none" stroke="${strokeCol}" stroke-width="1.5" marker-end="url(#am)"/>
+      <path d="M 605,100 C 560,172 260,172 155,100" fill="none" stroke="${strokeCol}" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#am)"/>
+      <text x="380" y="148" text-anchor="middle" font-family="monospace" font-size="10" fill="#5a6579">return → next round</text>
+      <path d="M 610,100 L 610,152" fill="none" stroke="${stopped?accent:strokeCol}" stroke-width="${stopped?2.5:1.5}" ${stopped?'':'stroke-dasharray="3 3"'} marker-end="url(#am)"/>
+      <text x="655" y="132" font-family="monospace" font-size="9.5" fill="${stopped?accent:'#5a6579'}">stop fires</text>
+      ${g}
+    </svg>`;
+    $("loopSvgWrap").innerHTML = svg;
+  }
+
+  /* ============================================================
+     CLAUDE API CALL (with retry)
+  ============================================================ */
+  async function callClaude(system, userMsg, tag){
+    let attempt = 0;
+    let lastErr = null;
+    while(attempt < MAX_RETRIES){
+      try{
+        state.apiCalls++;
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({
+            model: MODEL,
+            max_tokens: 2000,
+            system: system,
+            messages:[{role:"user", content: userMsg}]
+          })
+        });
+        if(!resp.ok){
+          const t = await resp.text().catch(()=> "");
+          throw new Error(`HTTP ${resp.status}: ${t.slice(0,200)}`);
+        }
+        const data = await resp.json();
+        const textParts = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text);
+        const text = textParts.join("\n").trim();
+        if(!text) throw new Error("Empty response from model");
+        return text;
+      }catch(err){
+        lastErr = err;
+        attempt++;
+        state.retries++;
+        log("sys", `⚠ ${tag} call failed (attempt ${attempt}/${MAX_RETRIES}): ${err.message}`);
+        if(attempt < MAX_RETRIES){
+          await new Promise(r=>setTimeout(r, 600 * Math.pow(2, attempt)));
+        }
+      }
+    }
+    throw lastErr;
+  }
+
+  function extractCode(text){
+    const m = text.match(/```(?:[a-zA-Z0-9_+-]*)\n([\s\S]*?)```/);
+    if(m) return m[1].trim();
+    return text.trim();
+  }
+
+  function extractScore(text){
+    const m = text.match(/FINAL_SCORE:\s*(\d{1,3})/i);
+    if(m){
+      let v = parseInt(m[1],10);
+      if(isNaN(v)) return null;
+      return Math.max(0, Math.min(100, v));
+    }
+    return null;
+  }
+
+  /* ============================================================
+     UI RENDER HELPERS
+  ============================================================ */
+  function renderCode(code){
+    $("codeBox").textContent = code;
+  }
+
+  function renderHistory(){
+    const box = $("historyBox");
+    if(state.history.length===0){
+      box.innerHTML = '<div class="hint">No rounds completed yet.</div>';
+      return;
+    }
+    box.innerHTML = "";
+    state.history.slice().reverse().forEach(h=>{
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const deltaClass = h.delta===null ? "delta-flat" : (h.delta>0 ? "delta-up" : "delta-flat");
+      const deltaText = h.delta===null ? "" : ` <span class="hi-delta ${deltaClass}">${h.delta>=0?'+':''}${h.delta}</span>`;
+      div.innerHTML = `
+        <div class="hi-top">
+          <span class="hi-round">Round ${h.round}</span>
+          <span class="hi-score">${h.score}<span style="color:var(--text-faint);font-weight:400;">/100</span>${deltaText}</span>
+        </div>
+        <div class="hi-crit">${escapeHtml(h.critiqueShort)}</div>
+      `;
+      box.appendChild(div);
+    });
+  }
+
+  function renderMemory(){
+    $("memBox").innerHTML = state.memoryNote
+      ? `<div style="color:var(--text-dim);white-space:pre-wrap;">${escapeHtml(state.memoryNote)}</div>`
+      : '<div class="hint">Memory Manager hasn\'t run yet.</div>';
+  }
+
+  function updateRoundBar(label, status, score, stopped){
+    $("roundLabel").textContent = label;
+    $("roundStatus").textContent = status;
+    $("scoreNow").textContent = (score===null||score===undefined) ? "—" : score;
+  }
+
+  function showStopBanner(msg){
+    const b = $("stopBanner");
+    b.textContent = msg;
+    b.classList.add("show");
+  }
+
+  /* ============================================================
+     MAIN PIPELINE
+  ============================================================ */
+  async function runPipeline(){
+    state.startTime = Date.now();
+    try{
+
+      // ---- Planner ----
+      setActiveAgent("planner"); setLive(true,"planner running");
+      updateRoundBar("Round 0 — planning…", "Planner is designing the build approach", null, false);
+      log("plan", "Planner: analyzing spec and drafting build plan…");
+      const planResp = await callClaude(SYS.planner, `SPEC:\n${state.spec}`, "Planner");
+      state.plan = planResp;
+      log("plan", "Planner done. Plan ready ("+planResp.length+" chars).");
+      markAgentDone("planner");
+
+      // ---- Executor ----
+      setActiveAgent("executor");
+      updateRoundBar("Round 0 — executing…", "Executor is writing the first draft", null, false);
+      log("exec", "Executor: generating first implementation from plan…");
+      const execResp = await callClaude(SYS.executor, `SPEC:\n${state.spec}\n\nBUILD PLAN:\n${state.plan}`, "Executor");
+      state.code = extractCode(execResp);
+      renderCode(state.code);
+      log("exec", "Executor done. First draft ready ("+state.code.split("\n").length+" lines).");
+      markAgentDone("executor");
+      setLive(true,"entering improvement loop");
+
+      // ---- LOOP ----
+      let plateauStreak = 0;
+      let prevScore = null;
+      let round = 0;
+      let stopReason = null;
+
+      while(true){
+        round++;
+        state.round = round;
+
+        // Evaluator
+        setActiveAgent("evaluator"); document.querySelectorAll('.agent-chip[data-key="improver"],.agent-chip[data-key="critic"],.agent-chip[data-key="memory"]').forEach(el=>el.classList.remove("active"));
+        renderLoop("evaluator", false);
+        updateRoundBar(`Round ${round} — checking stop condition…`, "Evaluator is scoring the current draft", prevScore, false);
+        log("eval", `Round ${round}: Evaluator scoring current draft against spec…`);
+        const evalContext = `SPEC:\n${state.spec}\n\nCURRENT CODE DRAFT:\n${state.code}\n\n${state.memoryNote?("RUNNING MEMORY NOTE FROM PRIOR ROUNDS:\n"+state.memoryNote+"\n"):""}`;
+        const evalResp = await callClaude(SYS.evaluator, evalContext, "Evaluator");
+        const score = extractScore(evalResp);
+        if(score===null){
+          log("sys", "⚠ Could not parse FINAL_SCORE from Evaluator output — treating as 0 and continuing.");
+        }
+        const finalScore = score===null ? 0 : score;
+        $("scoreNow").textContent = finalScore;
+        log("eval", `Round ${round}: Evaluator score = ${finalScore}/100.`);
+
+        // Critic
+        setActiveAgent("critic"); renderLoop("critic", false);
+        updateRoundBar(`Round ${round} — checking stop condition…`, "Critic is turning the evaluation into fixes", finalScore, false);
+        log("crit", `Round ${round}: Critic building punch-list from evaluation…`);
+        const criticContext = `SPEC:\n${state.spec}\n\nCURRENT CODE DRAFT:\n${state.code}\n\nEVALUATOR REPORT:\n${evalResp}`;
+        const criticResp = await callClaude(SYS.critic, criticContext, "Critic");
+        log("crit", `Round ${round}: Critic done (${criticResp.split("\n").filter(l=>l.trim()).length} findings lines).`);
+
+        // compute delta + record history entry (pre-improve)
+        const delta = prevScore===null ? null : (finalScore - prevScore);
+        state.history.push({
+          round, score: finalScore, delta,
+          evalText: evalResp, critique: criticResp,
+          critiqueShort: criticResp.split("\n").find(l=>l.trim().length>0) || criticResp.slice(0,140)
+        });
+        renderHistory();
+
+        // ---- STOP CHECKS (in order) ----
+        // 1. plateau: gain < delta for 2 straight rounds
+        if(delta !== null){
+          if(delta < state.delta) plateauStreak++;
+          else plateauStreak = 0;
+        }
+        let stopped = false;
+        if(plateauStreak >= 2){
+          stopReason = `Plateau detected — score improved less than ${state.delta} points for 2 consecutive rounds (round ${round-1}→${round} gain: ${delta}).`;
+          stopped = true;
+        } else if(finalScore >= state.threshold){
+          stopReason = `Threshold reached — Evaluator score ${finalScore} ≥ target ${state.threshold}.`;
+          stopped = true;
+        } else if(round >= HARD_CAP){
+          stopReason = `Hard iteration cap (${HARD_CAP} rounds) reached — safety fallback, not an intended stop.`;
+          stopped = true;
+        }
+
+        prevScore = finalScore;
+
+        if(stopped){
+          state.stopReason = stopReason;
+          log("sys", `⏹ Stop condition fired: ${stopReason}`);
+          renderLoop("final", true);
+          break;
+        }
+
+        // Improver (only runs if we're continuing)
+        setActiveAgent("improver"); renderLoop("improver", false);
+        updateRoundBar(`Round ${round} — improving…`, "Improver is rewriting the draft", finalScore, false);
+        log("improve", `Round ${round}: Improver rewriting draft using evaluation + critique…`);
+        const improveContext = `SPEC:\n${state.spec}\n\nCURRENT CODE DRAFT:\n${state.code}\n\nEVALUATOR REPORT:\n${evalResp}\n\nCRITIC PUNCH-LIST:\n${criticResp}\n\n${state.memoryNote?("RUNNING MEMORY NOTE:\n"+state.memoryNote+"\n"):""}`;
+        const improveResp = await callClaude(SYS.improver, improveContext, "Improver");
+        state.code = extractCode(improveResp);
+        renderCode(state.code);
+        markAgentDone("improver");
+        log("improve", `Round ${round}: Improver done. Draft updated.`);
+
+        // Memory Manager
+        setActiveAgent("memory"); renderLoop("evaluator", false);
+        updateRoundBar(`Round ${round+1} — checking stop condition…`, "Memory Manager is compressing history", finalScore, false);
+        log("mem", `Round ${round}: Memory Manager updating running note…`);
+        const histSummary = state.history.map(h=>`R${h.round}: score ${h.score}${h.delta!==null?` (Δ${h.delta>=0?'+':''}${h.delta})`:''} — ${h.critiqueShort}`).join("\n");
+        const memContext = `ROUND HISTORY SO FAR:\n${histSummary}`;
+        const memResp = await callClaude(SYS.memory, memContext, "Memory Manager");
+        state.memoryNote = memResp;
+        renderMemory();
+        markAgentDone("memory");
+        log("mem", `Round ${round}: Memory note updated.`);
+      }
+
+      // ---- Final Reviewer ----
+      setActiveAgent("final"); setLive(true,"final review");
+      updateRoundBar(`Round ${round} — final review`, "Final Reviewer is independently assessing the draft", prevScore, true);
+      showStopBanner(state.stopReason);
+      log("final", "Final Reviewer: independently assessing surviving draft…");
+      const finalContext = `SPEC:\n${state.spec}\n\nFINAL CODE DRAFT:\n${state.code}\n\nFINAL EVALUATOR SCORE: ${prevScore}/100\n\nSTOP REASON: ${state.stopReason}`;
+      const finalResp = await callClaude(SYS.final, finalContext, "Final Reviewer");
+      state.finalReviewText = finalResp;
+      markAgentDone("final");
+      log("final", "Final Reviewer done. Pipeline complete.");
+      setLive(false, "complete");
+
+      renderFinalSection(prevScore);
+
+    }catch(err){
+      setLive(false, "error");
+      log("sys", "✖ Pipeline halted: " + err.message);
+      const box = $("dashboard");
+      const errDiv = document.createElement("div");
+      errDiv.className = "error-box";
+      errDiv.textContent = "Pipeline halted due to a repeated API error: " + err.message + ". You can adjust your spec/settings and try again.";
+      box.insertBefore(errDiv, box.firstChild);
+    }
+  }
+
+  function renderFinalSection(finalScore){
+    $("finalSection").style.display = "block";
+    $("finalCodeBox").textContent = state.code;
+    $("finalReviewBox").innerHTML = `<div style="white-space:pre-wrap;color:var(--text-dim);">${escapeHtml(state.finalReviewText)}</div>`;
+
+    const elapsed = ((Date.now()-state.startTime)/1000).toFixed(1);
+    const stats = [
+      {v: state.round, l:"Rounds run"},
+      {v: finalScore, l:"Final score"},
+      {v: state.apiCalls, l:"Live API calls"},
+      {v: state.retries, l:"Retries triggered"},
+      {v: elapsed+"s", l:"Wall-clock time"},
+      {v: state.threshold, l:"Target threshold"},
+      {v: state.delta, l:"Plateau delta"},
+      {v: state.stopReason.startsWith("Plateau") ? "Plateau" : state.stopReason.startsWith("Threshold") ? "Threshold" : "Hard cap", l:"Stop reason"},
+    ];
+    $("statGrid").innerHTML = stats.map(s=>`<div class="stat"><div class="v">${s.v}</div><div class="l">${s.l}</div></div>`).join("");
+
+    document.getElementById("finalSection").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  /* ============================================================
+     BOOTSTRAP
+  ============================================================ */
+  function resetAll(){
+    state = {spec:"", threshold:92, delta:3, plan:"", code:"", round:0, history:[], memoryNote:"", stopReason:null, finalReviewText:"", apiCalls:0, retries:0, startTime:0};
+    $("logBox").innerHTML = "";
+    $("historyBox").innerHTML = '<div class="hint">No rounds completed yet.</div>';
+    $("memBox").innerHTML = '<div class="hint">Memory Manager hasn\'t run yet.</div>';
+    $("codeBox").textContent = "// awaiting Executor…";
+    $("stopBanner").classList.remove("show");
+    $("finalSection").style.display = "none";
+    resetAgentChips();
+    renderLoop(null, false);
+    updateRoundBar("Round 0 — initializing…", "Waiting for Planner", null, false);
+    setLive(false, "idle");
+  }
+
+  document.getElementById("startBtn").addEventListener("click", ()=>{
+    const spec = document.getElementById("specInput").value.trim();
+    const threshold = parseInt(document.getElementById("thresholdInput").value, 10);
+    const delta = parseInt(document.getElementById("deltaInput").value, 10);
+    const errEl = document.getElementById("setupError");
+    errEl.textContent = "";
+    if(!spec){ errEl.textContent = "Please describe a spec to build."; return; }
+    if(isNaN(threshold) || threshold<50 || threshold>100){ errEl.textContent = "Threshold must be 50–100."; return; }
+    if(isNaN(delta) || delta<1 || delta>10){ errEl.textContent = "Delta must be 1–10."; return; }
+
+    resetAll();
+    state.spec = spec;
+    state.threshold = threshold;
+    state.delta = delta;
+
+    document.getElementById("setupScreen").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+    buildAgentRow();
+    buildExplainers();
+    renderLoop(null, false);
+    runPipeline();
+  });
+
+  document.getElementById("restartBtn").addEventListener("click", ()=>{
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("setupScreen").style.display = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  // initial paint
+  buildAgentRow();
+  buildExplainers();
+  renderLoop(null, false);
+
+})();
+</script>
+</body>
+</html>

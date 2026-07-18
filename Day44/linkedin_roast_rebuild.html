@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LinkedIn Roast & Rebuild — Anjali</title>
+<style>
+  :root{
+    --ink:#12181f;
+    --paper:#eef0f2;
+    --card:#ffffff;
+    --marker:#c0392b;
+    --marker-soft:#f7e4e1;
+    --good:#1e7a4c;
+    --good-soft:#e2f3ea;
+    --line:#d6dade;
+    --muted:#5b6570;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Courier New', monospace;
+    line-height:1.5;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:32px 20px 80px;}
+  h1{
+    font-family:Georgia,'Times New Roman',serif;
+    font-size:2.2rem;
+    margin:0 0 4px;
+    letter-spacing:-0.5px;
+  }
+  .subtitle{color:var(--muted);font-size:0.95rem;margin-bottom:24px;}
+  .stamp{
+    display:inline-block;
+    border:2px solid var(--marker);
+    color:var(--marker);
+    padding:4px 10px;
+    font-weight:bold;
+    transform:rotate(-3deg);
+    font-size:0.8rem;
+    letter-spacing:1px;
+    margin-bottom:20px;
+  }
+  nav{
+    display:flex;
+    gap:2px;
+    margin-bottom:24px;
+    border-bottom:2px solid var(--ink);
+    flex-wrap:wrap;
+  }
+  nav button{
+    font-family:Georgia,serif;
+    background:none;
+    border:none;
+    padding:10px 14px;
+    font-size:0.85rem;
+    cursor:pointer;
+    color:var(--muted);
+    border-bottom:3px solid transparent;
+    margin-bottom:-2px;
+  }
+  nav button.active{color:var(--ink);border-bottom:3px solid var(--marker);font-weight:bold;}
+  section{display:none;}
+  section.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    padding:20px;
+    margin-bottom:18px;
+    position:relative;
+  }
+  .card h3{
+    font-family:Georgia,serif;
+    margin-top:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .score{
+    font-family:Georgia,serif;
+    font-weight:bold;
+    color:var(--marker);
+    font-size:1.1rem;
+  }
+  .score.good{color:var(--good);}
+  .quote{
+    background:var(--marker-soft);
+    border-left:3px solid var(--marker);
+    padding:8px 12px;
+    font-style:italic;
+    margin:10px 0;
+  }
+  .reax{font-weight:bold;margin:8px 0 2px;}
+  .label{
+    display:inline-block;
+    font-size:0.72rem;
+    font-weight:bold;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    color:var(--marker);
+    margin-top:10px;
+  }
+  .label.g{color:var(--good);}
+  .overall{
+    text-align:center;
+    font-family:Georgia,serif;
+    font-size:2.4rem;
+    font-weight:bold;
+    color:var(--marker);
+    margin:10px 0 4px;
+  }
+  .overall.good{color:var(--good);}
+  .overall-label{text-align:center;color:var(--muted);font-size:0.8rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+  .option{border:1px dashed var(--line);padding:12px;margin:10px 0;}
+  .option strong{color:var(--marker);}
+  .before-after{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;}
+  .ba-col{flex:1;min-width:220px;padding:10px;font-size:0.9rem;}
+  .ba-col.before{background:var(--marker-soft);border-left:3px solid var(--marker);}
+  .ba-col.after{background:var(--good-soft);border-left:3px solid var(--good);}
+  .ba-col .tag{font-weight:bold;font-size:0.72rem;text-transform:uppercase;display:block;margin-bottom:4px;}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:0.9rem;}
+  td,th{border:1px solid var(--line);padding:8px;text-align:left;}
+  th{background:var(--ink);color:var(--paper);font-family:Georgia,serif;}
+  .arrow{color:var(--muted);}
+  .plus{color:var(--good);font-weight:bold;}
+  .day{
+    border:1px solid var(--line);
+    padding:14px 16px;
+    margin-bottom:12px;
+    border-left:5px solid var(--ink);
+  }
+  .day h4{margin:0 0 6px;font-family:Georgia,serif;}
+  .day .tag{
+    display:inline-block;
+    background:var(--ink);
+    color:var(--paper);
+    font-size:0.68rem;
+    padding:2px 8px;
+    letter-spacing:1px;
+    margin-bottom:8px;
+  }
+  .checklist li{margin-bottom:4px;}
+  .postbox{background:#fbfbfb;border:1px solid var(--line);padding:14px;font-size:0.9rem;white-space:pre-wrap;font-family:'Courier New',monospace;}
+  .charcount{color:var(--muted);font-size:0.75rem;margin-top:6px;}
+  .summary-card{
+    background:var(--ink);
+    color:var(--paper);
+    padding:28px;
+    font-family:Georgia,serif;
+    border:2px solid var(--marker);
+  }
+  .summary-card .big{font-size:1.6rem;font-weight:bold;text-align:center;}
+  .summary-card .row{display:flex;justify-content:space-around;margin:16px 0;}
+  .summary-card .row div{text-align:center;}
+  .summary-card .row .num{font-size:2rem;font-weight:bold;}
+  .summary-card ol{padding-left:20px;}
+  .summary-card .final{margin-top:14px;padding-top:14px;border-top:1px solid #555;font-style:italic;}
+  .missing{font-size:0.8rem;color:var(--muted);margin-top:10px;}
+  .missing strong{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="stamp">CANDID REVIEW — NOT FOR FLATTERY</span>
+  <h1>LinkedIn Roast &amp; Rebuild</h1>
+  <div class="subtitle">Prepared for Anjali · Goal: Land a Job · Ex-recruiter lens, zero fluff</div>
+
+  <nav>
+    <button class="tab active" data-t="roast">1 · The Roast</button>
+    <button class="tab" data-t="rebuild">2 · The Rebuild</button>
+    <button class="tab" data-t="score">3 · Scorecard</button>
+    <button class="tab" data-t="plan">4 · 7-Day Plan</button>
+    <button class="tab" data-t="summary">5 · Summary Card</button>
+  </nav>
+
+  <!-- PART 1: ROAST -->
+  <section id="roast" class="active">
+
+    <div class="card">
+      <h3>Headline <span class="score">2/10</span></h3>
+      <div class="quote">"Open to Work"</div>
+      <div class="reax">Recruiter's 3-second reaction:</div>
+      <p>"Okay... open to work as <em>what</em>? Doing <em>what</em>, for <em>who</em>?" — then they scroll past, because your headline is prime real estate and you spent it announcing a life circumstance instead of a value proposition.</p>
+      <span class="label">🧠 Why it hurts</span>
+      <p>LinkedIn search and recruiter search filters run heavily on headline keywords. "Open to Work" contains zero searchable skills — no "Data Engineer," no "Python," no "SQL." You are invisible in search results for roles you actually want.</p>
+      <span class="label">🔍 The invisible cost</span>
+      <p>Every recruiter Boolean-searching "Data Engineer Python SQL" never sees your profile surface, because the algorithm has nothing to match. The green #OpenToWork banner already signals availability — your headline text is being wasted on a duplicate signal instead of proof of skill.</p>
+    </div>
+
+    <div class="card">
+      <h3>About — First 2 Lines <span class="score">1/10</span></h3>
+      <div class="quote">"Fresher with a one year of experience"</div>
+      <div class="reax">Recruiter's 3-second reaction:</div>
+      <p>This is the line that shows <em>before</em> "see more." A recruiter reads it, mentally files you as junior-and-unsure, and taps away. There's a grammar slip too ("a one year") — in the first two lines, that's read as a lack of attention to detail, which is fatal for a data role where precision is the whole job.</p>
+      <span class="label">🧠 Why it hurts</span>
+      <p>"Fresher" and "one year of experience" are contradictory framings used together — it reads like you're not sure how to position yourself, so the recruiter decides for you (badly). Nothing here says what you actually do or who you help.</p>
+      <span class="label">🔍 The invisible cost</span>
+      <p>Most recruiters spend under 10 seconds before deciding to click "see more" or not. This line loses that click almost every time — meaning the rest of your About section, however good, is never read.</p>
+    </div>
+
+    <div class="card">
+      <h3>About — Full Section <span class="score">1/10</span></h3>
+      <p>There isn't a full section to score beyond the one line you gave me — which is itself the finding. A one-line About section on a job-search profile tells a recruiter you either haven't invested in your narrative or don't know what your narrative is.</p>
+      <span class="label">🔍 The invisible cost</span>
+      <p>No story, no proof, no keywords, no call to action. This is the single highest-leverage section for a job search and it's currently doing zero work for you.</p>
+    </div>
+
+    <div class="card">
+      <h3>Experience <span class="score">3/10</span></h3>
+      <div class="quote">Data Engineer, Prime Techwings — "Works with Dataflows, Daily Scrums, Conduct Meetings, Manage data pipelines"</div>
+      <div class="reax">Recruiter's 3-second reaction:</div>
+      <p>"This reads like a job description someone else wrote, not a person describing their own work." Four fragments, no verbs in past/present-continuous form, no scale, no outcome. "Conduct Meetings" and "Daily Scrums" tell me you attend ceremonies — they don't tell me you built anything.</p>
+      <span class="label">🧠 Why it hurts</span>
+      <p>Recruiters read experience bullets looking for evidence of impact: pipelines that moved X volume of data, dashboards that saved Y hours, processes you improved. "Manage data pipelines" with no numbers or tools named could describe literally anyone.</p>
+      <span class="label">🔍 The invisible cost</span>
+      <p>You're a Data Engineer with real tooling experience, and none of it is named here. Recruiters searching for specific stack keywords (Spark, Airflow, cloud platforms) have no way to find you through this entry.</p>
+    </div>
+
+    <div class="card">
+      <h3>Skills &amp; Keywords <span class="score">4/10</span></h3>
+      <p>Python, SQL, LLM, Data Visualization — a reasonable starting set, but thin for a Data Engineer role and there's a real gap: LLM sitting next to three generalist skills with no data-engineering tooling (pipelines, orchestration, warehousing, cloud) listed makes your target unclear. Are you a data engineer, a BI analyst, or pivoting into AI/ML? Right now the skills list doesn't answer that.</p>
+      <span class="label">🔍 The invisible cost</span>
+      <p>LinkedIn's search index rewards skill depth and specificity. A short, generic list means you're competing in the widest, most crowded search buckets instead of owning a specific, higher-visibility niche.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="border-top:2px solid var(--ink);padding-top:14px;">Overall Verdict</h3>
+      <div class="overall-label">Overall Profile Strength</div>
+      <div class="overall">22/100</div>
+      <p style="text-align:center;color:var(--muted);">Right now your profile reads as "unsure junior" — not because your actual experience is weak, but because nothing on the page proves otherwise.</p>
+    </div>
+  </section>
+
+  <!-- PART 2: REBUILD -->
+  <section id="rebuild">
+
+    <div class="card">
+      <h3>Headline — 3 Options</h3>
+      <p style="color:var(--muted);font-size:0.85rem;">Formula: [Role/Identity] | [Who I help / what I do] | [Proof or differentiator]</p>
+
+      <div class="option">
+        <strong>Option 1 — Keyword-Optimized</strong> (best for recruiter search visibility)
+        <p>Data Engineer | Python · SQL · Data Pipelines | Building reliable data systems, 1+ yr experience</p>
+      </div>
+      <div class="option">
+        <strong>Option 2 — Value-Proposition Style</strong> (best if you also want to signal your AI/ML pivot to teams that hire for it)
+        <p>Data Engineer transitioning into AI/ML | Turning raw data into pipelines and insights with Python &amp; SQL</p>
+      </div>
+      <div class="option">
+        <strong>Option 3 — Authority Style</strong> (use once you start posting/commenting — pairs with thought-leadership content)
+        <p>Data Engineer | Python, SQL &amp; LLMs | Sharing what I learn building data pipelines</p>
+      </div>
+      <p style="color:var(--muted);font-size:0.85rem;"><strong>When to use which:</strong> Start with Option 1 while actively job-hunting — it's built to surface in recruiter Boolean searches. Switch to Option 2 if you're specifically targeting AI/ML-adjacent roles. Option 3 only pays off once you're publishing content (see Day 2 &amp; Day 5 below) — an "authority" headline with no posts behind it reads as empty.</p>
+    </div>
+
+    <div class="card">
+      <h3>About Section — Rewrite</h3>
+      <p class="missing"><strong>Note:</strong> I only used what you've given me. Replace the bracketed placeholders with your real numbers/projects before publishing — don't leave them blank, and don't let me or you invent figures.</p>
+
+      <div class="option">
+        <strong>Hook (lines 1–2 — before "see more")</strong>
+        <p>I build the pipelines that make data trustworthy before anyone else on the team sees it.</p>
+      </div>
+      <div class="option">
+        <strong>Story (lines 3–5)</strong>
+        <p>I'm a Data Engineer with hands-on experience managing data pipelines and dataflows in a production environment. I work closely with cross-functional teams through daily scrums, translating business needs into reliable data infrastructure.</p>
+      </div>
+      <div class="option">
+        <strong>Proof (lines 6–8)</strong>
+        <p>At Prime Techwings, I [own/support/build] data pipelines that [move / process — add real scope, e.g. volume, frequency, or number of source systems]. I also work with SQL for data querying and analysis, and I'm building skills in LLMs and data visualization to bring more value to how teams use their data.</p>
+      </div>
+      <div class="option">
+        <strong>CTA (last line)</strong>
+        <p>Open to Data Engineering roles — feel free to message me or check out my featured section for projects.</p>
+      </div>
+
+      <span class="label">Keywords embedded for SEO</span>
+      <p>Data Engineer, data pipelines, dataflows, SQL, Python, cross-functional teams, LLMs, data visualization — these are the terms recruiter search filters commonly run on for this role.</p>
+    </div>
+
+    <div class="card">
+      <h3>Experience — Top Entry Rewrite</h3>
+      <div class="before-after">
+        <div class="ba-col before"><span class="tag">Before</span>Works with Dataflows</div>
+        <div class="ba-col after"><span class="tag">After</span>Built and maintained data pipelines to support [purpose — e.g. reporting/analytics], ensuring consistent data flow across [systems — name them if you can]</div>
+      </div>
+      <div class="before-after">
+        <div class="ba-col before"><span class="tag">Before</span>Daily Scrums</div>
+        <div class="ba-col after"><span class="tag">After</span>Collaborated with cross-functional teams through daily stand-ups to align on data priorities and unblock delivery</div>
+      </div>
+      <div class="before-after">
+        <div class="ba-col before"><span class="tag">Before</span>Conduct Meetings</div>
+        <div class="ba-col after"><span class="tag">After</span>Coordinated with stakeholders in recurring meetings to translate business requirements into data engineering tasks</div>
+      </div>
+      <div class="before-after">
+        <div class="ba-col before"><span class="tag">Before</span>Manage data pipelines</div>
+        <div class="ba-col after"><span class="tag">After</span>Managed end-to-end data pipeline reliability, monitoring for failures and resolving issues to keep [downstream use — dashboards/reports/models] accurate</div>
+      </div>
+      <p class="missing"><strong>Add numbers where you can:</strong> volume of data processed, number of pipelines owned, frequency (daily/hourly), or time saved. Even a solid estimate beats no number — a bullet with a number gets read differently than one without.</p>
+    </div>
+
+    <div class="card">
+      <h3>Skills Recommendations</h3>
+      <span class="label">Add (priority order)</span>
+      <p>1. Data Pipelines &nbsp;2. ETL &nbsp;3. Data Engineering &nbsp;4. Data Warehousing &nbsp;5. Cloud Platforms (name the specific one you use) &nbsp;6. Data Modeling &nbsp;7. Large Language Models (LLM) &nbsp;8. SQL &nbsp;9. Python &nbsp;10. Data Visualization</p>
+      <span class="label g">Keep as-is</span>
+      <p>Python, SQL, Data Visualization — all solid, keep them.</p>
+      <span class="label">Pin to top 3</span>
+      <p>Python · SQL · Data Pipelines — these are the highest-search-volume terms recruiters filter by for your target role.</p>
+      <p class="missing">I've deliberately left generic orchestration/cloud tool names as placeholders — only add the specific tools you've actually used, so your profile stays accurate.</p>
+    </div>
+  </section>
+
+  <!-- PART 3: SCORECARD -->
+  <section id="score">
+    <div class="card">
+      <h3>Before vs After — Section Scorecard</h3>
+      <table>
+        <tr><th>Section</th><th>Before</th><th></th><th>After</th><th>Change</th></tr>
+        <tr><td>Headline</td><td>2/10</td><td class="arrow">→</td><td>8/10</td><td class="plus">+6</td></tr>
+        <tr><td>About (Hook)</td><td>1/10</td><td class="arrow">→</td><td>8/10</td><td class="plus">+7</td></tr>
+        <tr><td>About (Full)</td><td>1/10</td><td class="arrow">→</td><td>7/10</td><td class="plus">+6</td></tr>
+        <tr><td>Experience</td><td>3/10</td><td class="arrow">→</td><td>7/10</td><td class="plus">+4</td></tr>
+        <tr><td>Skills / Keywords</td><td>4/10</td><td class="arrow">→</td><td>8/10</td><td class="plus">+4</td></tr>
+      </table>
+      <div class="overall-label">Overall</div>
+      <div class="overall good" style="display:flex;align-items:center;justify-content:center;gap:14px;font-size:1.8rem;">
+        <span style="color:var(--marker)">22/100</span><span class="arrow" style="font-size:1.2rem;">→</span><span style="color:var(--good)">76/100</span>
+      </div>
+      <p style="text-align:center;color:var(--muted);font-size:0.85rem;">The 7/10s (not 10/10s) on Experience and full About are honest — they'll climb further once you add real numbers and named tools instead of placeholders.</p>
+    </div>
+  </section>
+
+  <!-- PART 4: 7-DAY PLAN -->
+  <section id="plan">
+
+    <div class="day">
+      <span class="tag">DAY 1</span>
+      <h4>Make All Profile Changes</h4>
+      <ul class="checklist">
+        <li>☐ Replace headline with Option 1 (or 2, if targeting AI/ML-adjacent roles)</li>
+        <li>☐ Replace About section with the Hook + Story + Proof + CTA rewrite</li>
+        <li>☐ Fill in real numbers/scope in the Proof section and Experience bullets</li>
+        <li>☐ Update Experience entry with the 4 rewritten bullets</li>
+        <li>☐ Add the 10 recommended skills, pin top 3 (Python, SQL, Data Pipelines)</li>
+        <li>☐ Add a profile photo and banner if missing (basic but often skipped)</li>
+      </ul>
+    </div>
+
+    <div class="day">
+      <span class="tag">DAY 2</span>
+      <h4>Publish Post #1 — "I Just Rebuilt My LinkedIn"</h4>
+      <div class="postbox">I just spent a day rebuilding my LinkedIn profile from scratch — and it was uncomfortable.
+
+Turns out "Open to Work" as a headline and a one-line About section were doing more harm than good. Recruiters skim in seconds, and I was giving them nothing to find me by.
+
+So I rewrote it: a headline built around what I actually do (Data Engineering, Python, SQL), an About section that tells my story instead of just my status, and experience bullets that show impact, not just tasks.
+
+Small profile, big lesson: how you describe your work matters as much as the work itself.
+
+Data Engineers / recruiters — what's one thing you wish more junior profiles got right?</div>
+      <div class="charcount">~700 characters — well under the 1300 limit, with a question at the end to drive comments.</div>
+    </div>
+
+    <div class="day">
+      <span class="tag">DAY 3</span>
+      <h4>Send 10 Strategic Connection Requests</h4>
+      <p><strong>Who to target:</strong> Data Engineering recruiters/TA specialists at 5-10 companies you'd want to work for, Data Engineers 1-3 years ahead of you (for advice, not job asks), and hiring managers on Data/Analytics teams at target companies.</p>
+      <div class="postbox">Hi [Name] — I'm a Data Engineer working with Python, SQL and data pipelines, currently exploring new opportunities. Would love to connect and follow your work in the space.</div>
+      <div class="charcount">~230 characters — under the 300 limit.</div>
+    </div>
+
+    <div class="day">
+      <span class="tag">DAY 4</span>
+      <h4>Comment on 5 Posts in Your Target Space</h4>
+      <p><strong>The Value Comment formula:</strong> Agree with a specific point → Add a genuine insight or your own experience → Ask a question that invites a reply. Example: "Completely agree that pipeline monitoring gets overlooked early on. In my own work I've found [specific observation]. Curious — how do you decide when it's worth automating alerts vs. manual checks?" This gets you seen by the poster and their audience, not just the original poster.</p>
+    </div>
+
+    <div class="day">
+      <span class="tag">DAY 5</span>
+      <h4>Publish Post #2 — Lessons-Learned / Hot Take</h4>
+      <div class="postbox">Unpopular opinion: "Manage data pipelines" is the most useless line on most Data Engineer resumes and profiles — mine included, until this week.
+
+It tells a recruiter nothing. Managed how? At what scale? Solving what problem?
+
+The fix wasn't complicated — I just had to actually say what I did: which systems, what broke, what I fixed, what got better because of it.
+
+If your experience section reads like a job description instead of a story, that's the first thing I'd change.
+
+What's a phrase you've retired from your own profile?</div>
+      <div class="charcount">~640 characters.</div>
+    </div>
+
+    <div class="day">
+      <span class="tag">DAY 6</span>
+      <h4>Engage &amp; Expand</h4>
+      <ul class="checklist">
+        <li>☐ Reply to every comment on both posts within a few hours of posting — this is what keeps LinkedIn's algorithm pushing your post further</li>
+        <li>☐ Send 5 more connection requests using the Day 3 template, targeting a new set of companies/recruiters</li>
+      </ul>
+    </div>
+
+    <div class="day">
+      <span class="tag">DAY 7</span>
+      <h4>Review &amp; Adjust</h4>
+      <p><strong>Profile views:</strong> A jump this week vs. your prior baseline means your headline/keywords are now surfacing in search — good sign. Flat views mean the keyword set may need to be more specific to your target roles.</p>
+      <p><strong>Connection acceptance rate:</strong> Above ~40-50% on cold requests is healthy for this template. Lower means either your targeting is too broad or your profile (photo, headline) isn't building enough trust at a glance — revisit Day 1 changes.</p>
+      <p><strong>Post engagement:</strong> Comments matter more than likes here — they're what extends reach. If Day 2's post underperformed, Day 5's question should be sharper and more specific to get replies, not just agreement.</p>
+    </div>
+  </section>
+
+  <!-- PART 5: SUMMARY CARD -->
+  <section id="summary">
+    <div class="summary-card">
+      <p style="text-align:center;letter-spacing:1px;font-size:0.8rem;color:#aab;">SCREENSHOT &amp; POST THIS</p>
+      <p class="big">I let AI roast my LinkedIn profile today. Here's what changed:</p>
+      <div class="row">
+        <div><div class="num" style="color:#e57373;">22</div>Before /100</div>
+        <div><div class="num" style="color:#81c784;">76</div>After /100</div>
+      </div>
+      <p><strong>Top 3 mistakes I was making:</strong></p>
+      <ol>
+        <li>My headline just said "Open to Work" — zero searchable skills, invisible to recruiters</li>
+        <li>My About section was one line: "Fresher with a one year of experience" — no story, no proof, no reason to keep reading</li>
+        <li>My experience bullets read like a job description ("Manage data pipelines") instead of showing actual impact</li>
+      </ol>
+      <div class="final">The #1 thing that made the biggest difference: rewriting the About hook — the two lines that show before "see more" — so it leads with what I actually do, not my job-search status.</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('nav .tab');
+  const sections = document.querySelectorAll('section');
+  tabs.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      sections.forEach(s=>s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.t).classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+</script>
+</body>
+</html>

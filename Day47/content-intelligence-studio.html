@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Intelligence Studio</title>
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#ffffff; --border:#e3e5ec; --text:#1a1c23; --sub:#5b5f6d;
+    --accent:#6c5ce7; --accent2:#00cec9; --warn:#e17055; --good:#00b894; --shadow:rgba(20,20,40,0.06);
+    --radius:14px;
+  }
+  [data-theme="dark"]{
+    --bg:#0e0f14; --card:#171922; --border:#262a37; --text:#eceef5; --sub:#9599aa;
+    --accent:#8b7dfb; --accent2:#2fe6df; --warn:#ff8a68; --good:#2ee6a6; --shadow:rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg); color:var(--text); transition:background .3s,color .3s;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+  header h1{font-size:22px;margin:0;display:flex;align-items:center;gap:10px;}
+  header h1 .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;}
+  .sub{color:var(--sub);font-size:13px;margin-top:2px;}
+  button{
+    font-family:inherit;cursor:pointer;border:none;border-radius:10px;padding:10px 18px;
+    font-size:14px;font-weight:600;transition:transform .15s,opacity .15s;
+  }
+  button:active{transform:scale(0.97);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+  .theme-toggle{background:var(--card);border:1px solid var(--border);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:0 4px 20px var(--shadow);margin-bottom:20px;}
+  .card h2{margin-top:0;font-size:16px;display:flex;align-items:center;gap:8px;}
+  textarea{
+    width:100%;min-height:140px;border-radius:10px;border:1px solid var(--border);
+    background:var(--bg);color:var(--text);padding:14px;font-size:14px;font-family:inherit;resize:vertical;
+  }
+  textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .meta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+  .pill{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:800px){.grid2{grid-template-columns:1fr;}}
+  .hidden{display:none !important;}
+
+  /* Reviewer pipeline */
+  .reviewer-list{display:flex;flex-direction:column;gap:10px;}
+  .reviewer{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--border);}
+  .reviewer .dot{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s;}
+  .reviewer.active .dot{background:var(--accent);animation:pulse 1s infinite;}
+  .reviewer.done .dot{background:var(--good);}
+  .reviewer.error .dot{background:var(--warn);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .reviewer .info{flex:1;}
+  .reviewer .name{font-size:13px;font-weight:600;}
+  .reviewer .desc{font-size:11px;color:var(--sub);}
+  .reviewer .status{font-size:11px;color:var(--sub);font-weight:600;}
+
+  .log{max-height:180px;overflow-y:auto;font-size:12px;font-family:'SF Mono',Consolas,monospace;background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border);}
+  .log div{padding:2px 0;color:var(--sub);}
+  .log div.hi{color:var(--accent);}
+
+  /* score ring */
+  .score-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+  .ring{position:relative;width:140px;height:140px;flex-shrink:0;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring .num .n{font-size:34px;font-weight:700;}
+  .ring .num .l{font-size:11px;color:var(--sub);}
+
+  .cat-bar{margin-bottom:14px;}
+  .cat-bar .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+  .cat-bar .track{height:8px;border-radius:6px;background:var(--bg);overflow:hidden;border:1px solid var(--border);}
+  .cat-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width 1s ease;}
+
+  .tag{display:inline-block;font-size:11px;padding:4px 10px;border-radius:20px;margin:3px 4px 3px 0;}
+  .tag.strength{background:rgba(0,184,148,.12);color:var(--good);}
+  .tag.weak{background:rgba(225,112,85,.12);color:var(--warn);}
+
+  .section-title{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);margin:18px 0 8px;font-weight:700;}
+  .rewrite-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;position:relative;}
+  .copy-btn{position:absolute;top:10px;right:10px;font-size:11px;padding:4px 10px;}
+  .hook-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;font-size:13px;}
+  .checklist label{display:flex;gap:10px;align-items:flex-start;font-size:13px;margin-bottom:10px;cursor:pointer;line-height:1.5;}
+  .checklist input{margin-top:3px;}
+  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .empty-hint{color:var(--sub);font-size:13px;text-align:center;padding:30px 10px;}
+  .error-box{background:rgba(225,112,85,.1);border:1px solid var(--warn);color:var(--warn);padding:12px 14px;border-radius:10px;font-size:13px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .badge-tier{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;}
+  .stage-count{font-size:12px;color:var(--sub);}
+  .prompt-chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:8px 14px;font-size:12.5px;cursor:pointer;transition:border-color .15s;}
+  .prompt-chip:hover{border-color:var(--accent);}
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+</style>
+</head>
+<body data-theme="light">
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1><span class="logo">CI</span> Content Intelligence Studio</h1>
+      <div class="sub">AI content consultant · Instagram/TikTok captions · reach optimization</div>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+  </header>
+
+  <div class="card">
+    <h2>📝 Your caption / post copy</h2>
+    <textarea id="contentInput" placeholder="Paste your Instagram or TikTok caption here..."></textarea>
+    <div class="meta-row">
+      <span class="pill">Platform: Instagram/TikTok</span>
+      <span class="pill">Goal: Maximize reach</span>
+      <span class="pill">Tone: Gentle & encouraging</span>
+      <span class="pill" id="charCount">0 characters</span>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-primary" id="analyzeBtn">✨ Run AI analysis</button>
+      <button class="btn-ghost" id="sampleBtn">Load sample caption</button>
+      <button class="btn-ghost hidden" id="resetBtn">Start over</button>
+    </div>
+    <div id="topError"></div>
+  </div>
+
+  <div class="card hidden" id="pipelineCard">
+    <h2>🔬 Review pipeline <span class="stage-count" id="stageCount"></span></h2>
+    <div class="reviewer-list" id="reviewerList"></div>
+    <div class="section-title">Live activity log</div>
+    <div class="log" id="activityLog"></div>
+  </div>
+
+  <div id="resultsArea"></div>
+
+</div>
+
+<script>
+const API_URL = "https://api.anthropic.com/v1/messages";
+const MODEL = "claude-sonnet-4-5-20250929";
+const $ = (id) => document.getElementById(id);
+
+const contentInput = $("contentInput");
+const charCount = $("charCount");
+const analyzeBtn = $("analyzeBtn");
+const sampleBtn = $("sampleBtn");
+const resetBtn = $("resetBtn");
+const pipelineCard = $("pipelineCard");
+const reviewerList = $("reviewerList");
+const activityLog = $("activityLog");
+const resultsArea = $("resultsArea");
+const stageCount = $("stageCount");
+const topError = $("topError");
+
+contentInput.addEventListener("input", () => {
+  charCount.textContent = contentInput.value.length + " characters";
+});
+
+$("themeToggle").addEventListener("click", () => {
+  const body = document.body;
+  const isDark = body.getAttribute("data-theme") === "dark";
+  body.setAttribute("data-theme", isDark ? "light" : "dark");
+  $("themeToggle").textContent = isDark ? "🌙" : "☀️";
+});
+
+sampleBtn.addEventListener("click", () => {
+  contentInput.value = "Started my morning routine 6 months ago and honestly it changed everything. Wake up, drink water, journal for 5 mins, short walk. No phone for the first hour. Small habit but it stuck because I made it stupid easy. Anyone else doing something similar? Drop your routine below 👇";
+  contentInput.dispatchEvent(new Event("input"));
+});
+
+resetBtn.addEventListener("click", () => {
+  pipelineCard.classList.add("hidden");
+  resultsArea.innerHTML = "";
+  resetBtn.classList.add("hidden");
+  analyzeBtn.disabled = false;
+  topError.innerHTML = "";
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+function logLine(text, hi=false){
+  const d = document.createElement("div");
+  if(hi) d.className = "hi";
+  d.textContent = "→ " + text;
+  activityLog.appendChild(d);
+  activityLog.scrollTop = activityLog.scrollHeight;
+}
+
+// ---- Reviewer pipeline definition ----
+const REVIEWERS = [
+  {
+    id:"hook",
+    name:"Hook & Scroll-Stop Analyst",
+    desc:"Evaluates the first line's power to stop the scroll",
+    system:`You are a world-class short-form social copy strategist specializing in scroll-stopping hooks for Instagram and TikTok. You have studied thousands of viral captions and understand the psychology of the first 1-2 seconds of attention. Your review tone is gentle, warm, and encouraging while still being precise and useful — you never sugarcoat away the real issues, but you frame everything constructively, like a supportive mentor. 
+
+Analyze the caption's opening line/hook specifically. Discuss: does it create curiosity, tension, relatability, or a pattern interrupt? Would it stop a thumb mid-scroll? Give a score out of 10 for hook strength with clear reasoning grounded in platform behavior (not generic advice). Suggest 3 alternative hook rewrites that would perform better, each with a one-line rationale.
+
+Respond in clean readable plain text with clear section headers using plain words (not markdown symbols like # or *). Do not use JSON. Do not use code blocks. Write naturally, like a report.`
+  },
+  {
+    id:"algo",
+    name:"Platform Algorithm Strategist",
+    desc:"Assesses reach, discoverability and shareability signals",
+    system:`You are a platform growth strategist who deeply understands the Instagram and TikTok recommendation algorithms — watch time, saves, shares, comments, dwell time, and how caption text influences these signals. Your tone is gentle and encouraging, like a coach who wants the creator to win, while still being fully honest about weaknesses.
+
+Analyze this caption purely from an algorithmic reach and distribution lens: Does the copy encourage comments (open questions, debate bait)? Does it encourage saves (value density, list format)? Does it encourage shares (relatable or identity-affirming content)? Is there a clear call-to-action? Are there any elements that could hurt reach (external link mentions, banned-adjacent words, over-hashtagging)?
+
+Give a score out of 10 for "reach potential" and explain your reasoning using specific phrases from the caption. Then give 3 concrete, specific edits that would likely improve algorithmic performance.
+
+Respond in clean readable plain text with clear section headers using plain words (not markdown symbols). Do not use JSON or code blocks.`
+  },
+  {
+    id:"copy",
+    name:"Caption Copywriter & Voice Editor",
+    desc:"Reviews clarity, rhythm, grammar and authentic voice",
+    system:`You are a senior copywriter who has written viral captions for top lifestyle, business, and creator brands. You care deeply about rhythm, clarity, authentic voice, and readability on mobile screens (short lines, natural pauses). Your tone is warm, encouraging, and specific — you point out what's working before addressing what needs work.
+
+Review this caption for: sentence rhythm and pacing, clarity of message, whether the voice feels authentic and human versus generic/AI-sounding, line-break and formatting choices for mobile readability, and overall emotional resonance.
+
+Score out of 10 for "copy quality." Then provide one complete rewritten version of the full caption that preserves the original intent and voice but elevates the craft — make it feel like a natural upgrade, not a totally different piece of writing.
+
+Respond in clean readable plain text with clear section headers using plain words (not markdown symbols). Do not use JSON or code blocks. Present the full rewrite clearly labeled as "Rewritten caption:" as its own paragraph.`
+  },
+  {
+    id:"psych",
+    name:"Engagement Psychologist",
+    desc:"Examines emotional triggers and audience psychology",
+    system:`You are a behavioral psychologist specializing in what drives people to engage with social content — curiosity gaps, social proof, identity signaling, in-group belonging, mild controversy, vulnerability, humor, and relatability. Your tone is gentle, warm, and genuinely encouraging, treating the creator's writing with respect and care.
+
+Analyze which psychological engagement triggers are present or missing in this caption. Explain, in plain accessible language, WHY certain phrases will or won't trigger comments, shares, or emotional reactions. Identify the single biggest missed emotional opportunity in the copy.
+
+Score out of 10 for "psychological engagement pull." Then give one clear, kind, and specific recommendation for how to deepen the emotional connection without being manipulative or inauthentic.
+
+Respond in clean readable plain text with clear section headers using plain words (not markdown symbols). Do not use JSON or code blocks.`
+  },
+  {
+    id:"final",
+    name:"Executive Report Synthesizer",
+    desc:"Combines all findings into one unified strategic report",
+    system:`You are the lead content strategist at a top creator agency, and you have just received four specialist reviews (hook analysis, algorithm/reach analysis, copywriting analysis, and psychology/engagement analysis) about a single Instagram/TikTok caption. Your job is to synthesize everything into one clear, encouraging, and genuinely useful executive report for the creator.
+
+You will be given the original caption plus the four specialist reviews as context. Produce a final synthesis with these clearly labeled plain-text sections, in this order, using plain words as headers (no markdown symbols like # or *):
+
+Overall score out of 100 — give a single number (a weighted holistic judgment of viral/reach potential) with a one-sentence justification.
+
+Category scores — restate hook strength, reach potential, copy quality, and psychological pull each out of 10, exactly as given by the specialists, in a simple list like "Hook strength: 7 out of 10".
+
+Executive summary — 3 to 4 sentences, warm and encouraging, capturing the overall verdict.
+
+Top strengths — 3 bullet-style short lines (no dashes needed, just short lines), each starting with the word Strength followed by a colon.
+
+Top weaknesses — 3 bullet-style short lines, each starting with the word Weakness followed by a colon, framed constructively.
+
+Missed opportunities — 2 to 3 short lines, each starting with the word Opportunity followed by a colon.
+
+Highest impact improvement — one single sentence describing the ONE change that would move the needle most.
+
+Predicted performance potential — a short paragraph clearly framed as an AI estimate (say the words "AI estimate" explicitly), describing likely relative performance (e.g. below average, average, above average, high potential) and why, without inventing fake exact numbers like follower counts.
+
+Publishing checklist — exactly 6 short actionable checklist lines, each starting with the word Check followed by a colon, covering things like posting time, hashtag strategy, first comment strategy, caption formatting, cover frame or visual pairing, and a call to action.
+
+Deeper optimization prompts — 3 short follow up questions or prompts the creator could ask next to keep improving (each starting with the word Prompt followed by a colon).
+
+Write everything in plain, warm, encouraging language. Do not use JSON, do not use markdown symbols such as asterisks or hash signs, do not use code blocks. Use plain text section headers followed by a colon or newline.`
+  }
+];
+
+let capturedReviews = {};
+
+function renderReviewerList(){
+  reviewerList.innerHTML = "";
+  REVIEWERS.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "reviewer";
+    div.id = "rev-" + r.id;
+    div.innerHTML = `
+      <div class="dot"></div>
+      <div class="info">
+        <div class="name">${r.name}</div>
+        <div class="desc">${r.desc}</div>
+      </div>
+      <div class="status" id="status-${r.id}">Queued</div>
+    `;
+    reviewerList.appendChild(div);
+  });
+  stageCount.textContent = `(${REVIEWERS.length} stages)`;
+}
+
+function setReviewerState(id, state, statusText){
+  const el = $("rev-" + id);
+  el.classList.remove("active","done","error");
+  if(state) el.classList.add(state);
+  $("status-" + id).textContent = statusText;
+}
+
+async function callClaude(systemPrompt, userPrompt, retries=2){
+  const body = {
+    model: MODEL,
+    max_tokens: 2000,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }]
+  };
+  for(let attempt=0; attempt<=retries; attempt++){
+    try{
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if(!res.ok){
+        const errText = await res.text().catch(()=> "");
+        throw new Error(`API error ${res.status}: ${errText.slice(0,200)}`);
+      }
+      const data = await res.json();
+      const text = (data && data.content && data.content[0] && data.content[0].text) ? data.content[0].text : "";
+      if(!text) throw new Error("Empty response from model.");
+      return text;
+    }catch(err){
+      if(attempt === retries) throw err;
+      logLine(`Retrying after error: ${err.message}`, true);
+      await new Promise(r => setTimeout(r, 900 * (attempt+1)));
+    }
+  }
+}
+
+function extractScore(text){
+  const match = text.match(/(\d{1,3})\s*(?:out of|\/)\s*10/i) || text.match(/score[:\s]+(\d{1,3})/i);
+  if(match) return Math.min(10, parseInt(match[1]));
+  return null;
+}
+
+function extractOverallScore(text){
+  const match = text.match(/(\d{1,3})\s*(?:out of|\/)\s*100/i);
+  if(match) return Math.min(100, parseInt(match[1]));
+  return 70;
+}
+
+function extractLinesStartingWith(text, keyword){
+  const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
+  return lines
+    .filter(l => new RegExp("^"+keyword+"\\s*:", "i").test(l))
+    .map(l => l.replace(new RegExp("^"+keyword+"\\s*:", "i"), "").trim());
+}
+
+function extractSection(text, startLabel, endLabels=[]){
+  const idx = text.toLowerCase().indexOf(startLabel.toLowerCase());
+  if(idx === -1) return "";
+  let sub = text.slice(idx + startLabel.length);
+  let cutoff = sub.length;
+  endLabels.forEach(label => {
+    const i = sub.toLowerCase().indexOf(label.toLowerCase());
+    if(i !== -1 && i < cutoff) cutoff = i;
+  });
+  return sub.slice(0, cutoff).replace(/^[:\s]+/, "").trim();
+}
+
+function escapeHtml(str){
+  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+async function runAnalysis(){
+  const content = contentInput.value.trim();
+  if(!content){
+    topError.innerHTML = `<div class="error-box"><span>Please paste a caption before running analysis.</span></div>`;
+    return;
+  }
+  topError.innerHTML = "";
+  analyzeBtn.disabled = true;
+  sampleBtn.disabled = true;
+  resultsArea.innerHTML = "";
+  capturedReviews = {};
+  pipelineCard.classList.remove("hidden");
+  renderReviewerList();
+  activityLog.innerHTML = "";
+  logLine("Initializing content review pipeline...", true);
+  logLine(`Content length: ${content.length} characters`);
+  logLine("Selected reviewers: Hook Analyst, Algorithm Strategist, Copy Editor, Engagement Psychologist, Executive Synthesizer");
+
+  const specialistReviewers = REVIEWERS.filter(r => r.id !== "final");
+  let combinedContext = "";
+
+  for(const reviewer of specialistReviewers){
+    setReviewerState(reviewer.id, "active", "Analyzing...");
+    logLine(`${reviewer.name} is reviewing the caption...`);
+    try{
+      const userPrompt = `Here is the Instagram/TikTok caption to review:\n\n"""\n${content}\n"""\n\nPlatform: Instagram and TikTok\nCreator's primary goal: Maximize views and reach\nReview tone requested: Gentle and encouraging, but still genuinely useful and honest\n\nPlease provide your full specialist analysis now.`;
+      const result = await callClaude(reviewer.system, userPrompt);
+      capturedReviews[reviewer.id] = result;
+      combinedContext += `\n\n--- ${reviewer.name} review ---\n${result}`;
+      setReviewerState(reviewer.id, "done", "Complete");
+      logLine(`${reviewer.name} finished.`, true);
+      renderSpecialistCard(reviewer, result);
+    }catch(err){
+      setReviewerState(reviewer.id, "error", "Failed");
+      logLine(`${reviewer.name} failed: ${err.message}`, true);
+      renderErrorCard(reviewer, err.message);
+    }
+  }
+
+  // Final synthesis
+  const finalReviewer = REVIEWERS.find(r => r.id === "final");
+  setReviewerState(finalReviewer.id, "active", "Synthesizing...");
+  logLine("Executive Report Synthesizer is combining all findings...");
+  try{
+    const userPrompt = `Original caption:\n"""\n${content}\n"""\n\nSpecialist reviews collected so far:${combinedContext}\n\nPlease produce the final unified executive report now, following the exact structure and labels described in your instructions.`;
+    const finalResult = await callClaude(finalReviewer.system, userPrompt);
+    capturedReviews.final = finalResult;
+    setReviewerState(finalReviewer.id, "done", "Complete");
+    logLine("Executive report complete. Rendering dashboard...", true);
+    renderFinalDashboard(content, finalResult, capturedReviews);
+  }catch(err){
+    setReviewerState(finalReviewer.id, "error", "Failed");
+    logLine(`Executive synthesis failed: ${err.message}`, true);
+    renderErrorCard(finalReviewer, err.message, true);
+  }
+
+  analyzeBtn.disabled = false;
+  sampleBtn.disabled = false;
+  resetBtn.classList.remove("hidden");
+}
+
+function renderErrorCard(reviewer, message, isFinal=false){
+  const div = document.createElement("div");
+  div.className = "card";
+  div.innerHTML = `
+    <h2>⚠️ ${reviewer.name}</h2>
+    <div class="error-box">
+      <span>This reviewer hit an error: ${escapeHtml(message)}</span>
+      <button class="btn-ghost" onclick="retryReviewer('${reviewer.id}', ${isFinal})">Retry</button>
+    </div>
+  `;
+  resultsArea.appendChild(div);
+}
+
+async function retryReviewer(id, isFinal){
+  const reviewer = REVIEWERS.find(r => r.id === id);
+  const content = contentInput.value.trim();
+  setReviewerState(id, "active", "Retrying...");
+  logLine(`Retrying ${reviewer.name}...`, true);
+  try{
+    let userPrompt;
+    if(isFinal){
+      let combinedContext = "";
+      REVIEWERS.filter(r=>r.id!=="final").forEach(r => {
+        combinedContext += `\n\n--- ${r.name} review ---\n${capturedReviews[r.id] || "No data."}`;
+      });
+      userPrompt = `Original caption:\n"""\n${content}\n"""\n\nSpecialist reviews collected so far:${combinedContext}\n\nPlease produce the final unified executive report now, following the exact structure and labels described in your instructions.`;
+    } else {
+      userPrompt = `Here is the Instagram/TikTok caption to review:\n\n"""\n${content}\n"""\n\nPlatform: Instagram and TikTok\nCreator's primary goal: Maximize views and reach\nReview tone requested: Gentle and encouraging, but still genuinely useful and honest\n\nPlease provide your full specialist analysis now.`;
+    }
+    const result = await callClaude(reviewer.system, userPrompt);
+    capturedReviews[id] = result;
+    setReviewerState(id, "done", "Complete");
+    logLine(`${reviewer.name} succeeded on retry.`, true);
+    if(isFinal){
+      renderFinalDashboard(content, result, capturedReviews);
+    } else {
+      renderSpecialistCard(reviewer, result);
+    }
+  }catch(err){
+    setReviewerState(id, "error", "Failed");
+    logLine(`Retry failed: ${err.message}`, true);
+  }
+}
+
+function renderSpecialistCard(reviewer, text){
+  const score = extractScore(text);
+  const div = document.createElement("div");
+  div.className = "card";
+  div.innerHTML = `
+    <h2>${reviewer.name} ${score ? `<span class="badge-tier" style="background:rgba(108,92,231,.12);color:var(--accent);">${score}/10</span>` : ""}</h2>
+    <div style="white-space:pre-wrap;font-size:14px;line-height:1.7;color:var(--text);">${escapeHtml(text)}</div>
+  `;
+  resultsArea.appendChild(div);
+}
+
+function renderFinalDashboard(originalContent, finalText, reviews){
+  const overall = extractOverallScore(finalText);
+  const hookScore = extractScore(reviews.hook || "") ?? "-";
+  const algoScore = extractScore(reviews.algo || "") ?? "-";
+  const copyScore = extractScore(reviews.copy || "") ?? "-";
+  const psychScore = extractScore(reviews.psych || "") ?? "-";
+
+  const execSummary = extractSection(finalText, "Executive summary", ["Top strengths","Top weaknesses"]);
+  const strengths = extractLinesStartingWith(finalText, "Strength");
+  const weaknesses = extractLinesStartingWith(finalText, "Weakness");
+  const opportunities = extractLinesStartingWith(finalText, "Opportunity");
+  const highestImpact = extractSection(finalText, "Highest impact improvement", ["Predicted performance"]);
+  const predicted = extractSection(finalText, "Predicted performance potential", ["Publishing checklist"]);
+  const checklist = extractLinesStartingWith(finalText, "Check");
+  const prompts = extractLinesStartingWith(finalText, "Prompt");
+  const rewrite = extractSection(reviews.copy || "", "Rewritten caption", []);
+  const hookRewrites = (reviews.hook || "").split("\n").filter(l => /^\s*\d[\.\)]/.test(l.trim()));
+
+  const circumference = 2 * Math.PI * 60;
+  const dash = (overall/100) * circumference;
+  const scoreColor = overall >= 75 ? "var(--good)" : overall >= 50 ? "var(--accent)" : "var(--warn)";
+
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <div class="card">
+      <h2>📊 Overall content health report</h2>
+      <div class="score-wrap">
+        <div class="ring">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="60" fill="none" stroke="var(--border)" stroke-width="12"/>
+            <circle cx="70" cy="70" r="60" fill="none" stroke="${scoreColor}" stroke-width="12"
+              stroke-dasharray="${dash} ${circumference}" stroke-linecap="round"/>
+          </svg>
+          <div class="num"><div class="n">${overall}</div><div class="l">out of 100</div></div>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <div class="cat-bar"><div class="top"><span>Hook strength</span><span>${hookScore}/10</span></div><div class="track"><div class="fill" style="width:${(hookScore/10)*100 || 0}%"></div></div></div>
+          <div class="cat-bar"><div class="top"><span>Reach potential</span><span>${algoScore}/10</span></div><div class="track"><div class="fill" style="width:${(algoScore/10)*100 || 0}%"></div></div></div>
+          <div class="cat-bar"><div class="top"><span>Copy quality</span><span>${copyScore}/10</span></div><div class="track"><div class="fill" style="width:${(copyScore/10)*100 || 0}%"></div></div></div>
+          <div class="cat-bar"><div class="top"><span>Psychological pull</span><span>${psychScore}/10</span></div><div class="track"><div class="fill" style="width:${(psychScore/10)*100 || 0}%"></div></div></div>
+        </div>
+      </div>
+      <div class="section-title">Executive summary</div>
+      <p style="font-size:14px;line-height:1.7;">${escapeHtml(execSummary || "See full report below.")}</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>✅ Strengths</h2>
+        ${strengths.length ? strengths.map(s=>`<div class="tag strength" style="display:block;margin-bottom:8px;padding:8px 12px;">${escapeHtml(s)}</div>`).join("") : "<p class='empty-hint'>See full report.</p>"}
+      </div>
+      <div class="card">
+        <h2>🔧 Areas to improve</h2>
+        ${weaknesses.length ? weaknesses.map(s=>`<div class="tag weak" style="display:block;margin-bottom:8px;padding:8px 12px;">${escapeHtml(s)}</div>`).join("") : "<p class='empty-hint'>See full report.</p>"}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💡 Missed opportunities</h2>
+      ${opportunities.length ? opportunities.map(o=>`<div class="hook-item">${escapeHtml(o)}</div>`).join("") : "<p class='empty-hint'>None flagged.</p>"}
+      <div class="section-title">Highest-impact improvement</div>
+      <p style="font-size:14px;line-height:1.7;font-weight:600;">${escapeHtml(highestImpact || "See full report.")}</p>
+    </div>
+
+    <div class="card">
+      <h2>🔮 Predicted performance potential <span class="badge-tier" style="background:rgba(0,206,201,.12);color:var(--accent2);">AI estimate</span></h2>
+      <p style="font-size:14px;line-height:1.7;">${escapeHtml(predicted || "See full report.")}</p>
+    </div>
+
+    <div class="card">
+      <h2>✍️ Before vs after</h2>
+      <div class="section-title">Before (your original)</div>
+      <div class="rewrite-box">${escapeHtml(originalContent)}</div>
+      <div class="section-title">After (AI-elevated rewrite)</div>
+      <div class="rewrite-box" id="afterBox">
+        <button class="copy-btn btn-ghost" onclick="copyText('afterBox')">Copy</button>
+        ${escapeHtml(rewrite || "Rewrite not detected in specialist output — see Copy Editor card above for full text.")}
+      </div>
+    </div>
+
+    ${hookRewrites.length ? `
+    <div class="card">
+      <h2>🪝 Alternative hooks</h2>
+      ${hookRewrites.map(h=>`<div class="hook-item">${escapeHtml(h.trim())}</div>`).join("")}
+    </div>` : ""}
+
+    <div class="card">
+      <h2>📋 Publishing checklist</h2>
+      <div class="checklist">
+        ${checklist.length ? checklist.map((c,i)=>`<label><input type="checkbox" id="chk${i}"><span>${escapeHtml(c)}</span></label>`).join("") : "<p class='empty-hint'>See full report.</p>"}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧭 Go deeper</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        ${prompts.length ? prompts.map(p=>`<div class="prompt-chip">${escapeHtml(p)}</div>`).join("") : "<p class='empty-hint'>No further prompts suggested.</p>"}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📄 Full executive report (raw)</h2>
+      <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.7;color:var(--sub);">${escapeHtml(finalText)}</div>
+    </div>
+  `;
+  resultsArea.appendChild(div);
+  window.scrollTo({top: div.offsetTop - 20, behavior:"smooth"});
+}
+
+function copyText(id){
+  const el = $(id);
+  const text = el.innerText.replace("Copy","").trim();
+  navigator.clipboard.writeText(text).then(()=>{
+    logLine("Rewrite copied to clipboard.");
+  });
+}
+
+analyzeBtn.addEventListener("click", runAnalysis);
+</script>
+</body>
+</html>

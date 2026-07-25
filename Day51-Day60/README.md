@@ -4,10 +4,13 @@
 
 A web app that helps college students stop guessing what to study each day during semester exams. Enter your subjects, topics, and exam dates — get a reliable day-by-day study plan, automatically balanced and revision-ready, with a Claude-powered layer that explains, motivates, and answers your questions.
 
-Built as a **10-day capstone project** for the **AB Talks 60-Day Claude AI Challenge** (Day 51/60), following a full SDLC: Requirements → Design → Setup → Implementation → Testing → Deployment → Maintenance.
+Built as a **10-day capstone project** for the **AB Talks 60-Day Claude AI Challenge** (Days 51–60), following a full SDLC: Requirements → Design → Setup → Implementation → Testing → Deployment → Maintenance.
+
+> 📁 This entire capstone lives in the [`Day51-Day60`](.) folder of this repo — every day's progress is added here rather than split across separate daily folders.
 
 **🔗 Live demo:** _coming soon (Day 8 of the capstone)_
-**📄 Full PRD & build blueprint:** see `/docs` (added as the capstone progresses)
+**📄 Planning docs:** `AI_Study_Planner_PRD.docx`, `Implementation_Blueprint_Days2-10.md`, `AI_Study_Planner_Pitch_Deck.pptx`
+**🏗 Design docs:** see `/docs` — `ARCHITECTURE.md`, `SCHEMA.md`, `API.md`, `UI-WIREFRAMES.md`, `PROJECT-STRUCTURE.md`
 
 ---
 
@@ -57,6 +60,8 @@ College students juggling 3–8 subjects a semester rarely have a clear, reliabl
 └─────────────────────┘
 ```
 
+Full diagrams (component, data flow, request lifecycle) are in `docs/ARCHITECTURE.md`.
+
 ## 🚫 Out of Scope for v1.0 (Future Work)
 
 - Progress tracking / completion status
@@ -66,11 +71,39 @@ College students juggling 3–8 subjects a semester rarely have a clear, reliabl
 - Native mobile apps
 - AI-driven (non-deterministic) scheduling
 
+## 📂 Project Structure
+
+```
+Day51-Day60/
+├── README.md
+├── AI_Study_Planner_PRD.docx
+├── Implementation_Blueprint_Days2-10.md
+├── AI_Study_Planner_Pitch_Deck.pptx
+├── screenshots/
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── SCHEMA.md
+│   ├── API.md
+│   ├── UI-WIREFRAMES.md
+│   └── PROJECT-STRUCTURE.md
+├── index.html
+├── css/style.css
+├── js/
+│   ├── models.js
+│   ├── storage.js
+│   ├── scheduler.js
+│   ├── ui.js
+│   └── ai.js        (added Day 5)
+└── api/ask-ai.js
+```
+
+Full explanation of each folder's responsibility is in `docs/PROJECT-STRUCTURE.md`.
+
 ## 🚀 Running Locally
 
 ```bash
 git clone <repo-url>
-cd ai-study-planner
+cd 60-days-Claude-Challenge/Day51-Day60
 # open index.html directly in a browser for frontend-only work
 # for AI features, use the Vercel CLI to run the serverless function locally:
 vercel dev
@@ -89,13 +122,15 @@ _Added as the build progresses through the capstone._
 
 This project is being built in public across 10 days as part of the AB Talks 60-Day Claude AI Challenge:
 
-- **Day 1:** Product discovery, requirements, and sprint planning ✅
-- **Days 2–10:** Design, setup, implementation, testing, deployment, and polish — in progress
+- **Day 1 (Day 51):** Product discovery, requirements, and sprint planning ✅
+- **Day 2 (Day 52):** System design — architecture, data schema, API contracts, wireframes, and project structure ✅
+- **Days 3–10 (Days 53–60):** — in progress
 
 ## 🙌 Acknowledgements
 
-Built with [Claude](https://claude.ai) as part of the 60-Day Claude AI Challenge by ABTalksOnAI.
+Built with [Claude](https://claude.ai) as part of the AB Talks 60-Day Claude AI Challenge.
+Community: [@ABTalks](#) · [@AnilBajpai](#)
 
 ---
 
-*This README will be updated daily as the AI Study Planner moves from PRD to deployed v1.0.*
+*This README is updated daily as the AI Study Planner moves from PRD to deployed v1.0.*

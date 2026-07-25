@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEFEND_YOUR_EXPERIENCE.exe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e0f;
+  --bg-panel:#10161a;
+  --bg-elevated:#151d21;
+  --border:#22302f;
+  --text:#d8e2e1;
+  --text-dim:#6f8482;
+  --text-dimmer:#465857;
+  --accent:#ffb000;
+  --accent-dim:#8a6300;
+  --accent-2:#4fd6c8;
+  --danger:#ff5c5c;
+  --success:#3ecf8e;
+  --mono:'IBM Plex Mono', monospace;
+  --sans:'IBM Plex Sans', sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+}
+::selection{background:var(--accent); color:#0a0e0f;}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dimmer);}
+
+/* ---------- Boot screen ---------- */
+#boot{
+  position:fixed; inset:0; background:#000; color:var(--accent);
+  font-family:var(--mono); font-size:14px; padding:40px;
+  z-index:9999; display:flex; flex-direction:column; gap:4px;
+}
+#boot .line{opacity:0; animation:fadein .15s forwards;}
+@keyframes fadein{to{opacity:1;}}
+#boot .cursor{display:inline-block; width:8px; height:14px; background:var(--accent); animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+/* ---------- App shell ---------- */
+#app{display:none; height:100vh; flex-direction:column;}
+#app.ready{display:flex;}
+
+.titlebar{
+  height:38px; flex-shrink:0; display:flex; align-items:center; gap:10px;
+  padding:0 14px; background:var(--bg-panel); border-bottom:1px solid var(--border);
+  font-family:var(--mono); font-size:12px; color:var(--text-dim); letter-spacing:.5px;
+}
+.dots{display:flex; gap:6px;}
+.dot{width:10px; height:10px; border-radius:50%;}
+.dot.r{background:#ff5f56;} .dot.y{background:#ffbd2e;} .dot.g{background:#27c93f;}
+.titlebar .path{color:var(--text-dim);}
+.titlebar .flex-spacer{flex:1;}
+.titlebar .stat{color:var(--accent); font-weight:600;}
+
+.layout{flex:1; display:flex; min-height:0;}
+
+/* ---------- Left: claims ledger ---------- */
+.ledger{
+  width:300px; flex-shrink:0; background:var(--bg-panel); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; min-height:0;
+}
+.ledger-head{padding:16px 16px 10px; border-bottom:1px solid var(--border);}
+.ledger-head h2{font-family:var(--mono); font-size:11px; letter-spacing:1.5px; color:var(--text-dim); text-transform:uppercase;}
+.ledger-head .overall{margin-top:10px;}
+.overall-label{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; justify-content:space-between; margin-bottom:6px;}
+.overall-label span.n{color:var(--accent); font-weight:600;}
+.bar-track{height:6px; background:var(--bg-elevated); border-radius:3px; overflow:hidden; border:1px solid var(--border);}
+.bar-fill{height:100%; background:linear-gradient(90deg, var(--accent-dim), var(--accent)); width:0%; transition:width .6s cubic-bezier(.4,0,.2,1);}
+.claims-list{flex:1; overflow-y:auto; padding:8px;}
+.claim-card{
+  padding:10px 12px; margin-bottom:6px; border-radius:6px; border:1px solid transparent;
+  cursor:pointer; transition:background .15s, border-color .15s;
+}
+.claim-card:hover{background:var(--bg-elevated);}
+.claim-card.active{border-color:var(--accent-dim); background:var(--bg-elevated);}
+.claim-top{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+.status-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+.status-dot.untested{background:var(--text-dimmer);}
+.status-dot.probing{background:var(--accent); box-shadow:0 0 6px var(--accent);}
+.status-dot.solid{background:var(--success); box-shadow:0 0 6px var(--success);}
+.status-dot.weak{background:var(--danger); box-shadow:0 0 6px var(--danger);}
+.claim-tag{font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim);}
+.claim-text{font-size:12px; line-height:1.4; color:var(--text-dim);}
+.claim-card.active .claim-text{color:var(--text);}
+.mini-bar{height:3px; background:var(--bg); border-radius:2px; margin-top:8px; overflow:hidden;}
+.mini-bar-fill{height:100%; transition:width .5s ease;}
+
+.ledger-foot{padding:12px; border-top:1px solid var(--border); display:flex; gap:8px;}
+.btn{
+  font-family:var(--mono); font-size:11px; letter-spacing:.5px; text-transform:uppercase;
+  padding:8px 10px; border-radius:5px; border:1px solid var(--border); background:var(--bg-elevated);
+  color:var(--text-dim); cursor:pointer; transition:all .15s; flex:1; text-align:center;
+}
+.btn:hover{border-color:var(--accent-dim); color:var(--accent);}
+.btn.primary{background:var(--accent); color:#0a0e0f; border-color:var(--accent); font-weight:600;}
+.btn.primary:hover{color:#0a0e0f; opacity:.9;}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+
+/* ---------- Center: transcript ---------- */
+.stage{flex:1; display:flex; flex-direction:column; min-width:0;}
+.transcript{flex:1; overflow-y:auto; padding:24px 30px; display:flex; flex-direction:column; gap:18px;}
+.msg{max-width:640px; animation:slideup .25s ease;}
+@keyframes slideup{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+.msg .who{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; display:flex; align-items:center; gap:6px;}
+.msg.interviewer .who{color:var(--accent);}
+.msg.user .who{color:var(--accent-2);}
+.msg.system .who{color:var(--text-dimmer);}
+.msg.interviewer{align-self:flex-start;}
+.msg.user{align-self:flex-end;}
+.bubble{padding:12px 14px; border-radius:8px; font-size:14px; line-height:1.55; border:1px solid var(--border);}
+.msg.interviewer .bubble{background:var(--bg-panel); border-left:2px solid var(--accent);}
+.msg.user .bubble{background:var(--bg-elevated); border-left:2px solid var(--accent-2);}
+.msg.system .bubble{background:transparent; border:1px dashed var(--border); color:var(--text-dim); font-family:var(--mono); font-size:12px;}
+.msg .target-tag{display:inline-block; margin-top:8px; font-family:var(--mono); font-size:9px; color:var(--text-dim); background:var(--bg); border:1px solid var(--border); padding:2px 6px; border-radius:4px;}
+.typing{display:flex; gap:4px; padding:6px 0;}
+.typing span{width:6px; height:6px; border-radius:50%; background:var(--accent); animation:tb 1s infinite ease-in-out;}
+.typing span:nth-child(2){animation-delay:.15s;} .typing span:nth-child(3){animation-delay:.3s;}
+@keyframes tb{0%,80%,100%{opacity:.2; transform:scale(.8);} 40%{opacity:1; transform:scale(1);}}
+
+.composer{border-top:1px solid var(--border); padding:14px 20px; background:var(--bg-panel); flex-shrink:0;}
+.composer-inner{display:flex; gap:10px; align-items:flex-end;}
+.prompt-prefix{font-family:var(--mono); color:var(--accent); font-size:14px; padding-bottom:11px;}
+textarea#answerInput{
+  flex:1; resize:none; background:var(--bg-elevated); border:1px solid var(--border); border-radius:6px;
+  color:var(--text); font-family:var(--sans); font-size:14px; padding:10px 12px; line-height:1.4;
+  max-height:160px; min-height:44px;
+}
+textarea#answerInput:focus{outline:none; border-color:var(--accent-dim);}
+.composer-hint{font-family:var(--mono); font-size:10px; color:var(--text-dimmer); margin-top:6px;}
+
+/* ---------- Empty state / upload ---------- */
+.empty-state{flex:1; display:flex; align-items:center; justify-content:center; padding:40px;}
+.dropzone{
+  width:100%; max-width:560px; border:1px dashed var(--border); border-radius:10px; padding:40px 30px;
+  text-align:center; transition:all .2s;
+}
+.dropzone.drag{border-color:var(--accent); background:rgba(255,176,0,.04);}
+.dropzone h1{font-family:var(--mono); font-size:20px; color:var(--accent); margin-bottom:10px; letter-spacing:.5px;}
+.dropzone p{color:var(--text-dim); font-size:13px; margin-bottom:20px; line-height:1.6;}
+.dropzone .icon{font-family:var(--mono); font-size:11px; color:var(--text-dimmer); margin-bottom:16px;}
+#fileInput{display:none;}
+.upload-actions{display:flex; gap:10px; justify-content:center; margin-bottom:16px;}
+textarea#pasteArea{
+  width:100%; min-height:100px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:6px;
+  color:var(--text); font-family:var(--sans); font-size:13px; padding:10px; margin-top:14px; display:none;
+}
+
+/* ---------- Right: confidence + report ---------- */
+.rightbar{width:280px; flex-shrink:0; background:var(--bg-panel); border-left:1px solid var(--border); padding:16px; overflow-y:auto; display:none;}
+.rightbar.show{display:block;}
+.rb-section{margin-bottom:22px;}
+.rb-title{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); margin-bottom:10px;}
+.gauge{position:relative; width:140px; height:140px; margin:0 auto 10px;}
+.gauge svg{transform:rotate(-90deg);}
+.gauge-num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;}
+.gauge-num .big{font-family:var(--mono); font-size:28px; color:var(--accent); font-weight:700;}
+.gauge-num .small{font-family:var(--mono); font-size:9px; color:var(--text-dim); text-transform:uppercase;}
+.legend{display:flex; flex-direction:column; gap:6px; font-family:var(--mono); font-size:11px;}
+.legend .row{display:flex; justify-content:space-between; color:var(--text-dim);}
+.legend .row .v{color:var(--text);}
+.history-item{font-family:var(--mono); font-size:11px; padding:8px; border:1px solid var(--border); border-radius:5px; margin-bottom:6px; color:var(--text-dim); cursor:pointer;}
+.history-item:hover{border-color:var(--accent-dim); color:var(--text);}
+
+/* ---------- Report overlay ---------- */
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:500; padding:30px;}
+.overlay.show{display:flex;}
+.report-card{
+  width:100%; max-width:780px; max-height:88vh; overflow-y:auto; background:var(--bg-panel);
+  border:1px solid var(--border); border-radius:10px; padding:0;
+}
+.report-head{padding:20px 26px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;}
+.report-head h2{font-family:var(--mono); color:var(--accent); font-size:16px; letter-spacing:.5px;}
+.report-body{padding:26px;}
+.report-item{border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px;}
+.report-item .rh{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+.report-item .rh .claim-mini{font-size:13px; color:var(--text); font-weight:500; max-width:70%;}
+.pill{font-family:var(--mono); font-size:10px; text-transform:uppercase; padding:3px 8px; border-radius:20px; letter-spacing:.5px; flex-shrink:0;}
+.pill.solid{background:rgba(62,207,142,.12); color:var(--success); border:1px solid rgba(62,207,142,.3);}
+.pill.weak{background:rgba(255,92,92,.12); color:var(--danger); border:1px solid rgba(255,92,92,.3);}
+.pill.probing{background:rgba(255,176,0,.12); color:var(--accent); border:1px solid rgba(255,176,0,.3);}
+.pill.untested{background:rgba(111,132,130,.12); color:var(--text-dim); border:1px solid var(--border);}
+.report-item .note{font-size:12.5px; color:var(--text-dim); line-height:1.5; margin-top:4px;}
+.report-item .fix{font-size:12.5px; color:var(--accent-2); line-height:1.5; margin-top:8px; border-top:1px dashed var(--border); padding-top:8px;}
+.close-x{cursor:pointer; color:var(--text-dim); font-family:var(--mono); font-size:20px; line-height:1;}
+.close-x:hover{color:var(--text);}
+.report-actions{display:flex; gap:10px; margin-top:16px;}
+
+/* ---------- Error toast ---------- */
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
+  background:var(--bg-elevated); border:1px solid var(--danger); color:var(--danger); font-family:var(--mono);
+  font-size:12px; padding:10px 16px; border-radius:6px; z-index:600; transition:all .3s; pointer-events:none;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
+
+@media (max-width: 900px){
+  .ledger{width:220px;}
+  .rightbar{display:none !important;}
+}
+@media (max-width: 700px){
+  .ledger{position:fixed; left:-260px; top:38px; bottom:0; z-index:200; transition:left .2s; width:260px;}
+  .ledger.open{left:0;}
+  .stage{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <div class="line" style="animation-delay:0s">$ initializing defend_your_experience...</div>
+  <div class="line" style="animation-delay:.15s">$ loading candidate profile... OK</div>
+  <div class="line" style="animation-delay:.3s">$ parsing claims from source document...</div>
+  <div class="line" style="animation-delay:.5s">$ found <span id="bootClaimCount">0</span> defensible claims</div>
+  <div class="line" style="animation-delay:.7s">$ arming skeptic module<span class="cursor"></span></div>
+</div>
+
+<div id="app">
+  <div class="titlebar">
+    <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+    <div class="path">defend_your_experience — <span id="candidateName">candidate.log</span></div>
+    <div class="flex-spacer"></div>
+    <div class="stat" id="titlebarStat">0 / 0 claims tested</div>
+  </div>
+
+  <div class="layout">
+    <div class="ledger" id="ledger">
+      <div class="ledger-head">
+        <h2>Claims Ledger</h2>
+        <div class="overall">
+          <div class="overall-label"><span>Overall readiness</span><span class="n" id="overallPct">0%</span></div>
+          <div class="bar-track"><div class="bar-fill" id="overallBar"></div></div>
+        </div>
+      </div>
+      <div class="claims-list" id="claimsList"></div>
+      <div class="ledger-foot">
+        <button class="btn" id="exportBtn">Export</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="empty-state" id="emptyState">
+        <div class="dropzone" id="dropzone">
+          <div class="icon">// DEFEND_YOUR_EXPERIENCE</div>
+          <h1>Prove it. Don't just claim it.</h1>
+          <p>This isn't a resume reviewer. It's a skeptical interviewer that takes every claim you've made about yourself — every metric, every "led," every "architected" — and makes you defend it, live, until it's airtight.<br><br>Drop a resume/LinkedIn/portfolio (.txt/.md), or use the profile already loaded for this session.</p>
+          <div class="upload-actions">
+            <button class="btn primary" id="useLoadedBtn">Use loaded profile (Anjali — Data Engineer)</button>
+          </div>
+          <div class="upload-actions">
+            <button class="btn" id="uploadBtn">Upload a file</button>
+            <button class="btn" id="pasteBtn">Paste text instead</button>
+          </div>
+          <input type="file" id="fileInput" accept=".txt,.md">
+          <textarea id="pasteArea" placeholder="Paste resume / LinkedIn / project description text here..."></textarea>
+          <div class="upload-actions" id="pasteConfirmRow" style="display:none; margin-top:10px;">
+            <button class="btn primary" id="pasteConfirmBtn">Extract claims &amp; begin</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="transcript" id="transcript" style="display:none;"></div>
+
+      <div class="composer" id="composer" style="display:none;">
+        <div class="composer-inner">
+          <div class="prompt-prefix">&gt;</div>
+          <textarea id="answerInput" placeholder="Type your answer..." rows="1"></textarea>
+          <button class="btn primary" id="sendBtn" style="flex:0 0 auto;">Send</button>
+        </div>
+        <div class="composer-hint" id="composerHint">Enter to send · Shift+Enter for newline</div>
+      </div>
+    </div>
+
+    <div class="rightbar" id="rightbar">
+      <div class="rb-section">
+        <div class="rb-title">Session confidence</div>
+        <div class="gauge">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="60" fill="none" stroke="#1c2528" stroke-width="10"/>
+            <circle id="gaugeArc" cx="70" cy="70" r="60" fill="none" stroke="#ffb000" stroke-width="10" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"/>
+          </svg>
+          <div class="gauge-num"><div class="big" id="gaugeNum">0%</div><div class="small">Interview-ready</div></div>
+        </div>
+      </div>
+      <div class="rb-section">
+        <div class="rb-title">Breakdown</div>
+        <div class="legend">
+          <div class="row"><span>● Solid</span><span class="v" id="cntSolid">0</span></div>
+          <div class="row"><span>● Probing</span><span class="v" id="cntProbing">0</span></div>
+          <div class="row"><span>● Weak</span><span class="v" id="cntWeak">0</span></div>
+          <div class="row"><span>● Untested</span><span class="v" id="cntUntested">0</span></div>
+        </div>
+      </div>
+      <div class="rb-section">
+        <div class="rb-title">Session history</div>
+        <div id="historyList"><div style="font-family:var(--mono); font-size:11px; color:var(--text-dimmer);">No saved sessions yet.</div></div>
+      </div>
+      <div class="rb-section">
+        <button class="btn primary" id="reportBtn" style="width:100%;">Generate Defense Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="reportOverlay">
+  <div class="report-card">
+    <div class="report-head">
+      <h2>Defense Report</h2>
+      <div class="close-x" id="closeReport">&times;</div>
+    </div>
+    <div class="report-body" id="reportBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+
+/* ================= CLAIMS DATA (pre-extracted from uploaded resume) ================= */
+const PRELOADED_CLAIMS = [
+  {id:'c1', tag:'Impact Metric', text:"Engineered high-performance PySpark ETL pipelines processing multi-terabyte transactional datasets for fraud and risk analytics, improving data readiness by 30%."},
+  {id:'c2', tag:'Impact Metric', text:"Designed and automated scalable ingestion workflows using AWS Glue to unify structured and unstructured trading data, reducing manual effort by 35%."},
+  {id:'c3', tag:'Architecture', text:"Architected Snowflake-based data marts aligned with standardized credit and lending KPIs, enhancing executive dashboard performance."},
+  {id:'c4', tag:'Real-time Systems', text:"Developed Kafka-driven real-time streaming pipelines to detect transactional anomalies, reducing investigation response time by 28%."},
+  {id:'c5', tag:'Performance Tuning', text:"Optimized Amazon Redshift workloads via advanced partitioning, distribution, and indexing strategies for enterprise-scale P&L and liquidity reporting."},
+  {id:'c6', tag:'Migration / Leadership', text:"Led migration of legacy on-prem financial datasets to a cloud-native Snowflake architecture using AWS DMS and S3, reducing infrastructure costs by 25%."},
+  {id:'c7', tag:'Compliance', text:"Ensures compliance with SOX and PCI-DSS, delivering reliable business insights across enterprise financial systems."},
+  {id:'c8', tag:'Database Design', text:"Designed, developed, and maintained PostgreSQL database solutions — structuring schemas, tables, indexes, and triggers (Quipment Technologies)."},
+  {id:'c9', tag:'Performance Tuning', text:"Tuned database performance by refining indexing strategies, query execution plans, and configuration parameters (Quipment Technologies)."},
+  {id:'c10', tag:'Project', text:"Designed and implemented a logistics data processing system (Transportation Management System) using MySQL and Python to model shipment lifecycles."}
+];
+const CANDIDATE_NAME = "Anjali — Data Engineer";
+
+/* ================= STATE ================= */
+let state = {
+  claims: [],
+  transcript: [],
+  activeClaimId: null,
+  turnCount: 0,
+  started: false
+};
+
+const $ = (id) => document.getElementById(id);
+
+function initClaims(list){
+  state.claims = list.map(c => ({...c, status:'untested', confidence:0, evidenceNotes:[]}));
+}
+
+/* ================= BOOT SEQUENCE ================= */
+window.addEventListener('DOMContentLoaded', () => {
+  $('bootClaimCount').textContent = PRELOADED_CLAIMS.length;
+  setTimeout(() => {
+    document.getElementById('boot').style.display = 'none';
+    $('app').classList.add('ready');
+    tryRestoreSession();
+  }, 1400);
+
+  $('useLoadedBtn').addEventListener('click', () => beginSession(PRELOADED_CLAIMS, CANDIDATE_NAME));
+  $('uploadBtn').addEventListener('click', () => $('fileInput').click());
+  $('pasteBtn').addEventListener('click', () => {
+    $('pasteArea').style.display = 'block';
+    $('pasteConfirmRow').style.display = 'flex';
+  });
+  $('pasteConfirmBtn').addEventListener('click', () => {
+    const txt = $('pasteArea').value.trim();
+    if(!txt){ showToast('Paste some text first.'); return; }
+    extractClaimsFromText(txt);
+  });
+  $('fileInput').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = () => extractClaimsFromText(reader.result);
+    reader.readAsText(f);
+  });
+
+  const dz = $('dropzone');
+  ['dragover','dragenter'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag'); }));
+  dz.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = () => extractClaimsFromText(reader.result);
+    reader.readAsText(f);
+  });
+
+  $('sendBtn').addEventListener('click', submitAnswer);
+  $('answerInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); submitAnswer(); }
+  });
+  $('answerInput').addEventListener('input', autoGrow);
+
+  $('exportBtn').addEventListener('click', exportSession);
+  $('resetBtn').addEventListener('click', resetSession);
+  $('reportBtn').addEventListener('click', generateReport);
+  $('closeReport').addEventListener('click', () => $('reportOverlay').classList.remove('show'));
+});
+
+function autoGrow(){
+  const el = $('answerInput');
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+/* ================= SESSION START ================= */
+function extractClaimsFromText(text){
+  // Lightweight client-side extraction fallback: split into candidate bullet/sentence claims.
+  const lines = text.split(/\n|\r/).map(l => l.trim()).filter(l => l.length > 25);
+  const bulletish = lines.filter(l => /^[-•*]|\d+%|\bled\b|\bdesigned\b|\bbuilt\b|\bimplemented\b|\bimproved\b|\bmanaged\b|\barchitected\b|\bdeveloped\b/i.test(l));
+  const picked = (bulletish.length ? bulletish : lines).slice(0, 10);
+  if(picked.length === 0){ showToast('Could not find enough claims in that text.'); return; }
+  const claims = picked.map((t, i) => ({id:'u'+i, tag: guessTag(t), text: t.replace(/^[-•*]\s*/, '')}));
+  beginSession(claims, "Uploaded profile");
+}
+
+function guessTag(t){
+  if(/%/.test(t)) return 'Impact Metric';
+  if(/led|team|mentor/i.test(t)) return 'Leadership';
+  if(/architect|design/i.test(t)) return 'Architecture';
+  if(/compliance|gdpr|sox|pci/i.test(t)) return 'Compliance';
+  return 'Claim';
+}
+
+function beginSession(claimsSource, name){
+  initClaims(claimsSource);
+  $('candidateName').textContent = name;
+  $('emptyState').style.display = 'none';
+  $('transcript').style.display = 'flex';
+  $('composer').style.display = 'block';
+  $('rightbar').classList.add('show');
+  state.started = true;
+  renderClaims();
+  updateGauges();
+  addSystemMsg("Session started. Audience: recruiter screening call. I will pick a claim, ask a real follow-up, and push until it holds up or breaks. Answer as you would live.");
+  askNextQuestion(true);
+  saveSession();
+}
+
+/* ================= RENDER: CLAIMS LIST ================= */
+function renderClaims(){
+  const list = $('claimsList');
+  list.innerHTML = '';
+  state.claims.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'claim-card' + (c.id === state.activeClaimId ? ' active' : '');
+    const barColor = c.status === 'solid' ? 'var(--success)' : c.status === 'weak' ? 'var(--danger)' : 'var(--accent)';
+    card.innerHTML = `
+      <div class="claim-top"><span class="status-dot ${c.status}"></span><span class="claim-tag">${c.tag}</span></div>
+      <div class="claim-text">${escapeHtml(truncate(c.text, 110))}</div>
+      <div class="mini-bar"><div class="mini-bar-fill" style="width:${c.confidence}%; background:${barColor};"></div></div>
+    `;
+    card.addEventListener('click', () => { state.activeClaimId = c.id; renderClaims(); });
+    list.appendChild(card);
+  });
+  updateGauges();
+}
+
+function truncate(s, n){ return s.length > n ? s.slice(0, n-1) + '…' : s; }
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function updateGauges(){
+  const total = state.claims.length || 1;
+  const tested = state.claims.filter(c => c.status !== 'untested').length;
+  const avgConf = state.claims.reduce((a,c) => a + c.confidence, 0) / total;
+  $('overallPct').textContent = Math.round(avgConf) + '%';
+  $('overallBar').style.width = avgConf + '%';
+  $('titlebarStat').textContent = `${tested} / ${total} claims tested`;
+  $('gaugeNum').textContent = Math.round(avgConf) + '%';
+  const circumference = 377;
+  $('gaugeArc').style.strokeDashoffset = circumference - (circumference * avgConf / 100);
+  const solid = state.claims.filter(c=>c.status==='solid').length;
+  const probing = state.claims.filter(c=>c.status==='probing').length;
+  const weak = state.claims.filter(c=>c.status==='weak').length;
+  const untested = state.claims.filter(c=>c.status==='untested').length;
+  $('cntSolid').textContent = solid;
+  $('cntProbing').textContent = probing;
+  $('cntWeak').textContent = weak;
+  $('cntUntested').textContent = untested;
+}
+
+/* ================= TRANSCRIPT RENDER ================= */
+function addMsg(role, html, targetClaim){
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+  const who = role === 'interviewer' ? 'Interviewer' : role === 'user' ? 'You' : 'System';
+  let tagHtml = '';
+  if(targetClaim){
+    tagHtml = `<div class="target-tag">re: ${escapeHtml(truncate(targetClaim.text, 60))}</div>`;
+  }
+  wrap.innerHTML = `<div class="who">${who}</div><div class="bubble">${html}${tagHtml}</div>`;
+  $('transcript').appendChild(wrap);
+  $('transcript').scrollTop = $('transcript').scrollHeight;
+  return wrap;
+}
+function addSystemMsg(text){ addMsg('system', escapeHtml(text)); }
+
+function showTyping(){
+  const wrap = document.createElement('div');
+  wrap.className = 'msg interviewer';
+  wrap.id = 'typingIndicator';
+  wrap.innerHTML = `<div class="who">Interviewer</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  $('transcript').appendChild(wrap);
+  $('transcript').scrollTop = $('transcript').scrollHeight;
+}
+function hideTyping(){ const t = $('typingIndicator'); if(t) t.remove(); }
+
+/* ================= API CALL ================= */
+async function callClaude(systemPrompt, userPrompt, retries){
+  retries = retries === undefined ? 2 : retries;
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }]
+      })
+    });
+    if(response.status === 429 && retries > 0){
+      await new Promise(r => setTimeout(r, 1200));
+      return callClaude(systemPrompt, userPrompt, retries - 1);
+    }
+    if(!response.ok){ throw new Error('API error ' + response.status); }
+    const data = await response.json();
+    const textBlock = (data.content || []).find(b => b.type === 'text');
+    if(!textBlock) throw new Error('No text in response');
+    return textBlock.text;
+  }catch(err){
+    if(retries > 0){
+      await new Promise(r => setTimeout(r, 800));
+      return callClaude(systemPrompt, userPrompt, retries - 1);
+    }
+    throw err;
+  }
+}
+
+function parseJsonSafe(text){
+  let cleaned = text.trim().replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  try{ return JSON.parse(cleaned); }catch(e){
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if(match){ try{ return JSON.parse(match[0]); }catch(e2){ return null; } }
+    return null;
+  }
+}
+
+/* ================= INTERVIEW LOGIC ================= */
+function buildSystemPrompt(){
+  return `You are a sharp, skeptical technical recruiter running a screening-call style mock interview for a candidate practicing for a career move. You have a ledger of claims from the candidate's resume. Your job: pick ONE claim at a time (favor untested or weak/probing ones, and claims with vague metrics), and ask ONE short, specific, realistic follow-up question that probes for concrete evidence — exact numbers, how something was measured, what the candidate personally did vs. the team, tools/methods, tradeoffs, what broke, what they'd do differently. Never ask generic template interview questions ("tell me about yourself", "what's your greatest weakness"). Every question must reference specific wording from the claim or the candidate's last answer. Escalate specificity over the conversation: start with "how" and "what exactly", move to numbers and edge cases, then to what would happen if challenged by a skeptical panel. If the candidate's last answer was vague, call it out briefly and demand specifics. If it was strong, acknowledge briefly then go one level deeper or move to a new claim.
+
+Respond ONLY with strict JSON, no markdown fences, no preamble:
+{"question": "the follow-up question, 1-3 sentences max", "targetClaimId": "id of the claim this question targets", "priorAnswerAssessment": "vague|solid|weak|na (na only for the very first question)", "confidenceDelta": integer from -30 to 30 representing how the candidate's PREVIOUS answer should move that claim's confidence score (0 if na), "statusSuggestion": "untested|probing|solid|weak (for the claim just targeted, based on the answer just given, or 'probing' if this is a fresh claim)"}`;
+}
+
+function buildUserPrompt(latestAnswer){
+  const claimsBlock = state.claims.map(c => `[${c.id}] (${c.status}, confidence ${c.confidence}%) ${c.tag}: ${c.text}`).join('\n');
+  const historyBlock = state.transcript.slice(-8).map(t => `${t.role.toUpperCase()}: ${t.text}`).join('\n');
+  return `CLAIMS LEDGER:\n${claimsBlock}\n\nCONVERSATION SO FAR:\n${historyBlock || '(none yet)'}\n\nLATEST CANDIDATE ANSWER (may be empty if this is the first question):\n${latestAnswer || '(n/a - this is the opening question)'}\n\nGenerate the next single follow-up question per your instructions.`;
+}
+
+const FALLBACK_TEMPLATES = [
+  c => `Walk me through the exact math behind "${truncate(c.text, 70)}" — what was the before/after number, and how did you measure it?`,
+  c => `Who specifically implemented "${truncate(c.text,70)}" — you alone, or a team? What was your individual piece?`,
+  c => `What tool or method did you use to verify "${truncate(c.text,70)}" actually worked, beyond it just shipping?`,
+  c => `If I called your manager right now about "${truncate(c.text,70)}", what would they say your biggest contribution was — and what would they push back on?`
+];
+
+async function askNextQuestion(isFirst){
+  showTyping();
+  let targetClaim = null;
+  let questionText = '';
+  let assessment = null;
+  try{
+    const raw = await callClaude(buildSystemPrompt(), buildUserPrompt(isFirst ? '' : lastUserAnswer()));
+    const parsed = parseJsonSafe(raw);
+    if(!parsed || !parsed.question) throw new Error('bad parse');
+    targetClaim = state.claims.find(c => c.id === parsed.targetClaimId) || pickUntestedClaim();
+    questionText = parsed.question;
+    assessment = parsed;
+  }catch(err){
+    targetClaim = pickUntestedClaim();
+    const tpl = FALLBACK_TEMPLATES[state.turnCount % FALLBACK_TEMPLATES.length];
+    questionText = tpl(targetClaim);
+    showToast('Connection hiccup — using a locally generated follow-up.');
+  }
+  hideTyping();
+
+  // apply confidence delta / status from previous answer, if applicable
+  if(assessment && assessment.confidenceDelta !== undefined && state.activeClaimId){
+    const prevClaim = state.claims.find(c => c.id === state.activeClaimId);
+    if(prevClaim){
+      prevClaim.confidence = clamp(prevClaim.confidence + (assessment.confidenceDelta || 0), 0, 100);
+      if(assessment.statusSuggestion && assessment.statusSuggestion !== 'probing'){
+        prevClaim.status = assessment.statusSuggestion;
+      } else if(prevClaim.status === 'untested'){
+        prevClaim.status = 'probing';
+      }
+    }
+  }
+
+  state.activeClaimId = targetClaim.id;
+  if(targetClaim.status === 'untested') targetClaim.status = 'probing';
+  renderClaims();
+
+  addMsg('interviewer', escapeHtml(questionText), targetClaim);
+  state.transcript.push({role:'interviewer', text: questionText, claimId: targetClaim.id});
+  state.turnCount++;
+  saveSession();
+}
+
+function pickUntestedClaim(){
+  const untested = state.claims.filter(c => c.status === 'untested');
+  if(untested.length) return untested[0];
+  const weakOrProbing = state.claims.filter(c => c.status !== 'solid');
+  if(weakOrProbing.length) return weakOrProbing[state.turnCount % weakOrProbing.length];
+  return state.claims[state.turnCount % state.claims.length];
+}
+
+function lastUserAnswer(){
+  const rev = [...state.transcript].reverse().find(t => t.role === 'user');
+  return rev ? rev.text : '';
+}
+
+function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+async function submitAnswer(){
+  const input = $('answerInput');
+  const text = input.value.trim();
+  if(!text) return;
+  addMsg('user', escapeHtml(text));
+  state.transcript.push({role:'user', text, claimId: state.activeClaimId});
+  input.value = '';
+  autoGrow();
+  saveSession();
+  await askNextQuestion(false);
+}
+
+/* ================= REPORT ================= */
+async function generateReport(){
+  $('reportBody').innerHTML = `<div style="font-family:var(--mono); color:var(--text-dim); font-size:12px;">Compiling defense report...</div>`;
+  $('reportOverlay').classList.add('show');
+
+  const claimsBlock = state.claims.map(c => `[${c.id}] status:${c.status} confidence:${c.confidence}% tag:${c.tag} text:"${c.text}"`).join('\n');
+  const transcriptBlock = state.transcript.map(t => `${t.role.toUpperCase()}${t.claimId ? ' ('+t.claimId+')' : ''}: ${t.text}`).join('\n');
+  const sys = `You are compiling a final "Defense Report" after a mock interview. For EACH claim in the ledger, assess based on the actual conversation transcript how well the candidate defended it. Respond ONLY with strict JSON (no markdown fences):
+{"overallReadiness": integer 0-100, "summary": "2-3 sentence honest summary of overall readiness for a recruiter screening call", "claims": [{"id": "claim id", "verdict": "solid|weak|untested", "note": "1-2 sentence honest assessment referencing what they actually said or failed to say", "fix": "1-2 sentence concrete suggestion for how to strengthen this specific claim before the real interview, e.g. a rewritten STAR-style framing or a metric they need to nail down"}]}`;
+  const user = `CLAIMS LEDGER:\n${claimsBlock}\n\nFULL TRANSCRIPT:\n${transcriptBlock || '(no answers given yet)'}\n\nProduce the final JSON report now.`;
+
+  try{
+    const raw = await callClaude(sys, user);
+    const parsed = parseJsonSafe(raw);
+    if(!parsed) throw new Error('bad parse');
+    renderReport(parsed);
+  }catch(err){
+    renderReport(buildLocalFallbackReport());
+    showToast('Report generated locally (API unavailable).');
+  }
+}
+
+function buildLocalFallbackReport(){
+  const avg = state.claims.reduce((a,c)=>a+c.confidence,0) / (state.claims.length||1);
+  return {
+    overallReadiness: Math.round(avg),
+    summary: "Generated offline: readiness reflects how many claims were tested and how confidently they held up during this session. Untested claims below still need live practice.",
+    claims: state.claims.map(c => ({
+      id: c.id,
+      verdict: c.status === 'solid' ? 'solid' : c.status === 'weak' ? 'weak' : 'untested',
+      note: c.status === 'untested' ? "Not yet probed this session." : `Confidence sits at ${c.confidence}% based on how the follow-ups went.`,
+      fix: "Rehearse this claim out loud with the exact number, your specific role, and one thing that went wrong along the way."
+    }))
+  };
+}
+
+function renderReport(report){
+  const body = $('reportBody');
+  const readiness = report.overallReadiness ?? Math.round(state.claims.reduce((a,c)=>a+c.confidence,0)/(state.claims.length||1));
+  let html = `
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-family:var(--mono); font-size:42px; color:var(--accent); font-weight:700;">${readiness}%</div>
+      <div style="font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim);">Overall interview readiness</div>
+    </div>
+    <p style="font-size:13.5px; color:var(--text-dim); line-height:1.6; margin-bottom:20px;">${escapeHtml(report.summary || '')}</p>
+  `;
+  (report.claims || []).forEach(rc => {
+    const claim = state.claims.find(c => c.id === rc.id);
+    const label = claim ? claim.text : rc.id;
+    html += `
+      <div class="report-item">
+        <div class="rh">
+          <div class="claim-mini">${escapeHtml(truncate(label, 90))}</div>
+          <div class="pill ${rc.verdict}">${rc.verdict}</div>
+        </div>
+        <div class="note">${escapeHtml(rc.note || '')}</div>
+        <div class="fix">→ ${escapeHtml(rc.fix || '')}</div>
+      </div>
+    `;
+  });
+  html += `<div class="report-actions">
+    <button class="btn primary" id="downloadReportBtn" style="flex:1;">Download report (.txt)</button>
+    <button class="btn" id="closeReport2" style="flex:1;">Close</button>
+  </div>`;
+  body.innerHTML = html;
+  $('downloadReportBtn').addEventListener('click', () => downloadReport(report, readiness));
+  $('closeReport2').addEventListener('click', () => $('reportOverlay').classList.remove('show'));
+}
+
+function downloadReport(report, readiness){
+  let out = `DEFENSE REPORT — ${$('candidateName').textContent}\nGenerated: ${new Date().toLocaleString()}\nOverall readiness: ${readiness}%\n\n${report.summary || ''}\n\n`;
+  (report.claims || []).forEach(rc => {
+    const claim = state.claims.find(c => c.id === rc.id);
+    out += `--------------------------------\nCLAIM: ${claim ? claim.text : rc.id}\nVERDICT: ${rc.verdict}\nNOTE: ${rc.note}\nFIX: ${rc.fix}\n\n`;
+  });
+  const blob = new Blob([out], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'defense-report.txt';
+  a.click();
+}
+
+/* ================= EXPORT / RESET / PERSISTENCE ================= */
+function exportSession(){
+  if(!state.started){ showToast('Nothing to export yet.'); return; }
+  const out = {
+    candidate: $('candidateName').textContent,
+    exportedAt: new Date().toISOString(),
+    claims: state.claims,
+    transcript: state.transcript
+  };
+  const blob = new Blob([JSON.stringify(out, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'defend-session.json';
+  a.click();
+}
+
+function resetSession(){
+  if(!confirm('Reset the current session? This clears the transcript and claim progress.')) return;
+  localStorage.removeItem('dye_session');
+  state = {claims:[], transcript:[], activeClaimId:null, turnCount:0, started:false};
+  $('transcript').innerHTML = '';
+  $('transcript').style.display = 'none';
+  $('composer').style.display = 'none';
+  $('rightbar').classList.remove('show');
+  $('emptyState').style.display = 'flex';
+  $('pasteArea').style.display = 'none';
+  $('pasteConfirmRow').style.display = 'none';
+  $('pasteArea').value = '';
+  $('candidateName').textContent = 'candidate.log';
+}
+
+function saveSession(){
+  try{
+    const archive = JSON.parse(localStorage.getItem('dye_history') || '[]');
+    const record = {
+      savedAt: new Date().toISOString(),
+      candidate: $('candidateName').textContent,
+      claims: state.claims,
+      transcript: state.transcript,
+      turnCount: state.turnCount,
+      activeClaimId: state.activeClaimId
+    };
+    localStorage.setItem('dye_session', JSON.stringify(record));
+    // keep a lightweight rolling history (last 5) of distinct sessions
+    if(archive.length === 0 || archive[0].candidate !== record.candidate){
+      archive.unshift({savedAt: record.savedAt, candidate: record.candidate, readiness: Math.round(state.claims.reduce((a,c)=>a+c.confidence,0)/(state.claims.length||1))});
+      localStorage.setItem('dye_history', JSON.stringify(archive.slice(0,5)));
+    }
+  }catch(e){ /* localStorage may be unavailable; fail silently */ }
+}
+
+function tryRestoreSession(){
+  try{
+    const saved = localStorage.getItem('dye_session');
+    if(!saved) return;
+    const record = JSON.parse(saved);
+    if(!record.claims || !record.claims.length) return;
+    state.claims = record.claims;
+    state.transcript = record.transcript || [];
+    state.turnCount = record.turnCount || 0;
+    state.activeClaimId = record.activeClaimId || null;
+    state.started = true;
+    $('candidateName').textContent = record.candidate;
+    $('emptyState').style.display = 'none';
+    $('transcript').style.display = 'flex';
+    $('composer').style.display = 'block';
+    $('rightbar').classList.add('show');
+    renderClaims();
+    state.transcript.forEach(t => {
+      const claim = state.claims.find(c => c.id === t.claimId);
+      addMsg(t.role, escapeHtml(t.text), t.role === 'interviewer' ? claim : null);
+    });
+    updateGauges();
+    renderHistoryList();
+  }catch(e){ /* ignore corrupt storage */ }
+}
+
+function renderHistoryList(){
+  try{
+    const archive = JSON.parse(localStorage.getItem('dye_history') || '[]');
+    if(!archive.length) return;
+    $('historyList').innerHTML = archive.map(h => `<div class="history-item">${escapeHtml(h.candidate)} — ${h.readiness}% · ${new Date(h.savedAt).toLocaleDateString()}</div>`).join('');
+  }catch(e){}
+}
+
+function showToast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+})();
+</script>
+</body>
+</html>

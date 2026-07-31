@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Study Planner</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>🧠 AI Study Planner</h1>
+    <p class="tagline">Know what to study, every single day.</p>
+  </header>
+
+  <main id="app">
+
+    <section class="preferences-bar">
+      <label for="dailyHoursInput">Daily study hours:</label>
+      <input type="number" id="dailyHoursInput" min="0.5" max="16" step="0.5">
+    </section>
+
+    <section class="subject-form-section">
+      <h2 id="formTitle">Add Subject</h2>
+      <form id="subjectForm">
+        <label for="subjectNameInput">Subject Name</label>
+        <input type="text" id="subjectNameInput" placeholder="e.g. Data Structures" required>
+
+        <label for="examDateInput">Exam Date</label>
+        <input type="date" id="examDateInput" required>
+
+        <label for="topicInput">Topics</label>
+        <div class="topic-input-row">
+          <input type="text" id="topicInput" placeholder="e.g. Trees & Graphs">
+          <button type="button" id="addTopicBtn">+ Add</button>
+        </div>
+        <ul id="topicList" class="topic-list"></ul>
+
+        <div class="form-actions">
+          <button type="button" id="cancelBtn">Cancel</button>
+          <button type="submit" id="saveBtn">Save Subject</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="subject-list-section">
+      <h2>Your Subjects</h2>
+      <div id="subjectListContainer"></div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Day 51–60 · AB Talks 60-Day Claude AI Challenge</p>
+  </footer>
+
+  <script src="js/models.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/scheduler.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

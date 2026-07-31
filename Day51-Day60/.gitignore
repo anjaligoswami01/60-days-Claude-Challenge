@@ -1,0 +1,13 @@
+# Environment variables (contains secrets - never commit)
+.env.local
+.env
+
+# Vercel local development
+.vercel
+
+# Dependencies (if any get installed later)
+node_modules/
+
+# OS-generated files
+.DS_Store
+Thumbs.db

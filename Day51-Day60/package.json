@@ -1,0 +1,9 @@
+{
+  "name": "ai-study-planner",
+  "version": "1.0.0",
+  "description": "AI Study Planner — a deterministic study scheduler enhanced with Claude AI. Built for the AB Talks 60-Day Claude AI Challenge (Days 51-60).",
+  "private": true,
+  "keywords": ["ai-study-planner", "claude-ai", "60-days-challenge"],
+  "author": "Anjali",
+  "license": "ISC"
+}

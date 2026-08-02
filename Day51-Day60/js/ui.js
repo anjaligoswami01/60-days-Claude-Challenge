@@ -1,5 +1,5 @@
 // AI Study Planner — UI Orchestration
-// Wires the Subject Form and subject list to the storage layer.
+// Wires the Subject Form, subject list, and AI panel to the storage/scheduler/ai layers.
 
 let appState = loadData();
 let editingSubjectId = null;
@@ -8,7 +8,9 @@ let tempTopics = [];
 function initApp() {
   renderSubjectList();
   wireFormEvents();
+  wireAiEvents();
   document.getElementById("dailyHoursInput").value = appState.preferences.dailyHours;
+  loadAiInsights();
 }
 
 function wireFormEvents() {
@@ -33,6 +35,7 @@ function handleDailyHoursChange(e) {
   }
   appState.preferences.dailyHours = value;
   saveData(appState);
+  loadAiInsights();
 }
 
 function handleAddTopic() {
@@ -108,6 +111,7 @@ function handleFormSubmit(e) {
   saveData(appState);
   resetForm();
   renderSubjectList();
+  loadAiInsights();
 }
 
 function resetForm() {
@@ -139,6 +143,7 @@ function handleDeleteSubject(id) {
   appState.subjects = appState.subjects.filter(function (s) { return s.id !== id; });
   saveData(appState);
   renderSubjectList();
+  loadAiInsights();
 }
 
 function renderSubjectList() {
@@ -186,6 +191,69 @@ function renderSubjectList() {
 
     container.appendChild(card);
   });
+}
+
+// ---------- AI Panel ----------
+
+function wireAiEvents() {
+  document.getElementById("explainBtn").addEventListener("click", handleExplainClick);
+  document.getElementById("qaForm").addEventListener("submit", handleQaSubmit);
+}
+
+function todayDateStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
+async function loadAiInsights() {
+  const tipEl = document.getElementById("aiTip");
+  const motivationEl = document.getElementById("aiMotivation");
+
+  if (appState.subjects.length === 0) {
+    tipEl.textContent = "Add a subject to get a personalized study tip.";
+    motivationEl.textContent = "";
+    return;
+  }
+
+  tipEl.textContent = "Loading tip...";
+  motivationEl.textContent = "Loading...";
+
+  const schedule = generateSchedule(appState.subjects, appState.preferences.dailyHours, null);
+  const todayStr = todayDateStr();
+  const todayPlanDay = schedule.days.find(function (d) { return d.date === todayStr; });
+
+  const tipResult = await askAI("tip", buildTipContext(todayPlanDay, appState.subjects));
+  tipEl.textContent = tipResult.success ? tipResult.text : "Couldn't load a tip right now — check back later.";
+
+  const motivationResult = await askAI("motivation", buildMotivationContext(appState.subjects, todayStr));
+  motivationEl.textContent = motivationResult.success ? motivationResult.text : "";
+}
+
+async function handleExplainClick() {
+  const explainEl = document.getElementById("aiExplanation");
+  if (appState.subjects.length === 0) {
+    explainEl.textContent = "Add a subject first, then I can explain your plan.";
+    return;
+  }
+  explainEl.textContent = "Thinking...";
+  const result = await askAI("explain", buildExplainContext(appState.subjects));
+  explainEl.textContent = result.success ? result.text : "Couldn't generate an explanation right now — try again in a moment.";
+}
+
+async function handleQaSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById("qaInput");
+  const answerEl = document.getElementById("qaAnswer");
+  const question = input.value.trim();
+  if (!question) return;
+
+  answerEl.textContent = "Thinking...";
+  const result = await askAI("qa", buildQaContext(question, appState.subjects));
+  answerEl.textContent = result.success ? result.text : "Couldn't get an answer right now — try again in a moment.";
+  input.value = "";
 }
 
 document.addEventListener("DOMContentLoaded", initApp);

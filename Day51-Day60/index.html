@@ -20,6 +20,23 @@
       <input type="number" id="dailyHoursInput" min="0.5" max="16" step="0.5">
     </section>
 
+    <section class="ai-panel">
+      <h2>🤖 AI Insights</h2>
+      <p id="aiMotivation" class="ai-motivation"></p>
+      <p id="aiTip" class="ai-tip"></p>
+      <button type="button" id="explainBtn">Explain my plan</button>
+      <p id="aiExplanation" class="ai-explanation"></p>
+
+      <form id="qaForm" class="qa-form">
+        <label for="qaInput">Ask a study question:</label>
+        <div class="qa-input-row">
+          <input type="text" id="qaInput" placeholder="e.g. How do I revise a weak topic fast?" maxlength="500">
+          <button type="submit">Ask</button>
+        </div>
+      </form>
+      <p id="qaAnswer" class="qa-answer"></p>
+    </section>
+
     <section class="subject-form-section">
       <h2 id="formTitle">Add Subject</h2>
       <form id="subjectForm">
@@ -57,6 +74,7 @@
   <script src="js/models.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/scheduler.js"></script>
+  <script src="js/ai.js"></script>
   <script src="js/ui.js"></script>
 </body>
 </html>

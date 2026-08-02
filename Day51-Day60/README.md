@@ -2,7 +2,7 @@
 
 > Know what to study, every single day.
 
-A web app that helps college students stop guessing what to study each day during semester exams. Enter your subjects, topics, and exam dates — get a reliable day-by-day study plan, automatically balanced and revision-ready, with a Claude-powered layer that explains, motivates, and answers your questions.
+A web app that helps college students stop guessing what to study each day during semester exams. Enter your subjects, topics, and exam dates — get a reliable day-by-day study plan, automatically balanced and revision-ready, with a Gemini-powered layer that explains, motivates, and answers your questions.
 
 Built as a **10-day capstone project** for the **AB Talks 60-Day Claude AI Challenge** (Days 51–60), following a full SDLC: Requirements → Design → Setup → Implementation → Testing → Deployment → Maintenance.
 
@@ -11,6 +11,7 @@ Built as a **10-day capstone project** for the **AB Talks 60-Day Claude AI Chall
 **🔗 Live demo:** _coming soon (Day 8 of the capstone)_
 **📄 Planning docs:** `AI_Study_Planner_PRD.docx`, `Implementation_Blueprint_Days2-10.md`, `AI_Study_Planner_Pitch_Deck.pptx`
 **🏗 Design docs:** see `/docs` — `ARCHITECTURE.md`, `SCHEMA.md`, `API.md`, `UI-WIREFRAMES.md`, `PROJECT-STRUCTURE.md`
+**⚙️ Setup docs:** see `/docs` — `SETUP.md`, `ENVIRONMENT.md`, `DAY3-SUMMARY.md`
 
 ---
 
@@ -22,13 +23,13 @@ College students juggling 3–8 subjects a semester rarely have a clear, reliabl
 
 ## ✨ Key Features (v1.0)
 
-- 📚 **Add subjects, topics & exam dates** — simple, fast input
-- 🧮 **Deterministic scheduling engine** — a rule-based algorithm (not AI) that prioritizes subjects by exam proximity, balances daily workload, and always produces the same plan for the same inputs
-- 📅 **Today's Focus + Calendar Timeline** — see exactly what to study today, and the full plan at a glance
-- 🔁 **Auto revision days** — the engine reserves dedicated revision time before every exam automatically
-- 🤖 **Claude-powered AI layer** — plain-language explanations of the plan, personalized daily tips, motivational messages, and a study Q&A assistant
-- 🔒 **Secure by design** — the Claude API key never touches the browser; all AI calls go through a minimal serverless proxy
-- 💾 **No login required** — your data saves automatically in your browser (localStorage)
+- 📚 **Add subjects, topics & exam dates** — simple, fast input ✅ *implemented*
+- 🧮 **Deterministic scheduling engine** — a rule-based algorithm (not AI) that prioritizes subjects by exam proximity, balances daily workload, and always produces the same plan for the same inputs ✅ *implemented*
+- 📅 **Today's Focus + Calendar Timeline** — see exactly what to study today, and the full plan at a glance *(full dashboard UI coming Day 6)*
+- 🔁 **Auto revision days** — the engine reserves dedicated revision time before every exam automatically, with zero idle gap days ✅ *implemented*
+- 🤖 **AI layer (Google Gemini, free tier)** — plain-language explanations of the plan, personalized daily tips, motivational messages, and a live study Q&A assistant ✅ *implemented*
+- 🔒 **Secure by design** — the AI API key never touches the browser; all AI calls go through a minimal serverless proxy ✅ *implemented*
+- 💾 **No login required** — your data saves automatically in your browser (localStorage) ✅ *implemented*
 - 📱 **Responsive** — works on both desktop and mobile browsers
 
 ## 🧱 Tech Stack
@@ -37,8 +38,8 @@ College students juggling 3–8 subjects a semester rarely have a clear, reliabl
 |---|---|---|
 | Frontend | HTML / CSS / vanilla JavaScript | No build tooling — simplest path for a first full-stack build |
 | Scheduling Engine | Plain JavaScript (deterministic logic) | Predictable, testable, no AI involved in the schedule itself |
-| Backend | Minimal serverless function (Node.js) | Only job: securely forward prompts to the Claude API |
-| AI | Anthropic Claude API | Explanations, tips, motivation, Q&A — additive, not load-bearing |
+| Backend | Minimal serverless function (Node.js) | Only job: securely forward prompts to the AI API |
+| AI | Google Gemini API (free tier) | Explanations, tips, motivation, Q&A — additive, not load-bearing; genuinely free, no card required |
 | Hosting | Vercel | Single platform for frontend + serverless function, GitHub auto-deploy, free tier |
 | Persistence | Browser `localStorage` | No database or accounts needed for v1.0 |
 
@@ -54,8 +55,8 @@ College students juggling 3–8 subjects a semester rarely have a clear, reliabl
        │ AI feature request (explain / tip / motivate / Q&A)
        ▼
 ┌─────────────────────┐        forwards prompt        ┌──────────────┐
-│ Serverless Proxy     │ ─────────────────────────────▶│ Claude API   │
-│ (api/ask-ai.js)       │◀───────────────────────────── │              │
+│ Serverless Proxy     │ ─────────────────────────────▶│ Gemini API   │
+│ (api/ask-ai.js)       │◀───────────────────────────── │ (free tier)  │
 │ API key in env vars   │        returns AI response    └──────────────┘
 └─────────────────────┘
 ```
@@ -79,22 +80,29 @@ Day51-Day60/
 ├── AI_Study_Planner_PRD.docx
 ├── Implementation_Blueprint_Days2-10.md
 ├── AI_Study_Planner_Pitch_Deck.pptx
+├── package.json
+├── vercel.json
+├── .gitignore
+├── .env.local           (git-ignored — holds GEMINI_API_KEY)
 ├── screenshots/
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── SCHEMA.md
 │   ├── API.md
 │   ├── UI-WIREFRAMES.md
-│   └── PROJECT-STRUCTURE.md
-├── index.html
+│   ├── PROJECT-STRUCTURE.md
+│   ├── SETUP.md
+│   ├── ENVIRONMENT.md
+│   └── DAY3-SUMMARY.md
+├── index.html            (Subject Form + list + AI panel — working)
 ├── css/style.css
 ├── js/
-│   ├── models.js
-│   ├── storage.js
-│   ├── scheduler.js
-│   ├── ui.js
-│   └── ai.js        (added Day 5)
-└── api/ask-ai.js
+│   ├── models.js          (data shapes documented)
+│   ├── storage.js          (localStorage read/write — implemented Day 4)
+│   ├── scheduler.js         (deterministic scheduling engine — implemented Day 4)
+│   ├── ai.js               (AI client — implemented Day 5)
+│   └── ui.js               (form + subject list + AI panel wiring — implemented Day 4–5)
+└── api/ask-ai.js           (secure Gemini proxy — implemented Day 5)
 ```
 
 Full explanation of each folder's responsibility is in `docs/PROJECT-STRUCTURE.md`.
@@ -102,17 +110,18 @@ Full explanation of each folder's responsibility is in `docs/PROJECT-STRUCTURE.m
 ## 🚀 Running Locally
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/anjaligoswami01/60-days-Claude-Challenge.git
 cd 60-days-Claude-Challenge/Day51-Day60
-# open index.html directly in a browser for frontend-only work
-# for AI features, use the Vercel CLI to run the serverless function locally:
 vercel dev
+# then visit http://localhost:3000
 ```
 
-You'll need an Anthropic API key stored in a local `.env.local` file (never committed):
+You'll need a free Google Gemini API key (get one at https://aistudio.google.com/apikey — no card required) stored in a local `.env.local` file (never committed):
 ```
-ANTHROPIC_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
 ```
+
+Full step-by-step instructions, including troubleshooting for common setup errors, are in `docs/SETUP.md`.
 
 ## 📸 Screenshots
 
@@ -124,11 +133,15 @@ This project is being built in public across 10 days as part of the AB Talks 60-
 
 - **Day 1 (Day 51):** Product discovery, requirements, and sprint planning ✅
 - **Day 2 (Day 52):** System design — architecture, data schema, API contracts, wireframes, and project structure ✅
-- **Days 3–10 (Days 53–60):** — in progress
+- **Day 3 (Day 53):** Environment setup, Vercel configuration, and a verified "Hello World" foundation ✅
+- **Day 4 (Day 54):** Subject management UI, localStorage persistence, and the deterministic scheduling engine ✅
+- **Day 5 (Day 55):** Free-tier AI layer (Google Gemini) via a secure serverless proxy — explanations, tips, motivation, and Q&A, all live ✅
+- **Days 6–10 (Days 56–60):** Full dashboard integration, testing, deployment, and polish — in progress
 
 ## 🙌 Acknowledgements
 
 Built with [Claude](https://claude.ai) as part of the AB Talks 60-Day Claude AI Challenge.
+AI features powered by Google's Gemini API (free tier).
 Community: [@ABTalks](#) · [@AnilBajpai](#)
 
 ---
